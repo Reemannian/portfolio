@@ -1,0 +1,1202 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="لعبة تعليمية لتحليل العدد إلى عوامله الأولية بالقسمة المتكررة. إعداد أ. ريم.">
+<style>:root{color-scheme:light}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>القسمة المتكررة</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lalezar&family=Readex+Pro:wght@400;600;700&display=swap">
+<style>
+/* Layout: a squared maths notebook page with a red margin rule; the division ladder sits on the paper, game controls beside or below it. */
+:root{
+  --paper:#f5f8fd; --grid:#dde5f4; --ink:#1b2a57; --soft:#56628c; --rule:#dc5048;
+  --mark:#ffe14a; --tile:#ffffff; --edge:#b7c3e2; --line:#c5cfe9;
+  --ok:#14774f; --ok-bg:#dff3e8; --bad:#ae2f28; --bad-bg:#fbe4e1; --lift:rgba(27,42,87,.22);
+  --band:#22307c; --on-band:#ffffff; --sun:#ffd84a; --ant:#8a3d1c;
+  --c1:#e2553a; --c2:#2867d6; --c3:#169a68; --c4:#7d4ad6; --c5:#d98d0b; --c6:#d03a72;
+  --f-display:"Lalezar","Readex Pro",Tahoma,sans-serif;
+  --f-body:"Readex Pro","Segoe UI",Tahoma,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#0e1630; --grid:#1a2548; --ink:#e7ecff; --soft:#9eabd8; --rule:#ff6e65;
+  --mark:rgba(245,212,60,.34); --tile:#18234b; --edge:#33427a; --line:#2c3a6c;
+  --ok:#5ad6a0; --ok-bg:rgba(90,214,160,.12); --bad:#ff8a80; --bad-bg:rgba(255,138,128,.12); --lift:rgba(0,0,0,.5);
+  --band:#151e4a; --on-band:#eef1ff; --sun:#ffd84a; --ant:#e07a4a;
+  --c1:#ff7a5e; --c2:#6b9cff; --c3:#3fd19a; --c4:#b18cff; --c5:#ffb938; --c6:#ff6f9f;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#0e1630; --grid:#1a2548; --ink:#e7ecff; --soft:#9eabd8; --rule:#ff6e65;
+  --mark:rgba(245,212,60,.34); --tile:#18234b; --edge:#33427a; --line:#2c3a6c;
+  --ok:#5ad6a0; --ok-bg:rgba(90,214,160,.12); --bad:#ff8a80; --bad-bg:rgba(255,138,128,.12); --lift:rgba(0,0,0,.5);
+  --band:#151e4a; --on-band:#eef1ff; --sun:#ffd84a; --ant:#e07a4a;
+  --c1:#ff7a5e; --c2:#6b9cff; --c3:#3fd19a; --c4:#b18cff; --c5:#ffb938; --c6:#ff6f9f;
+  color-scheme:dark}
+
+body{
+  background-color:var(--paper); color:var(--ink); font-family:var(--f-body); font-size:16px; line-height:1.6;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:26px 26px;
+}
+.app{position:relative;max-width:1000px;margin:0 auto;padding-block:20px 56px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.app::before{content:"";position:absolute;top:0;bottom:0;right:6px;width:2px;background:var(--rule);opacity:.55}
+
+/* Ulam spiral background: primes glow on the notebook */
+#bg{position:fixed;inset:0;width:100%;height:100%;z-index:0;pointer-events:none;-webkit-mask-image:radial-gradient(ellipse 60% 55% at 50% 55%,transparent 45%,#000 100%);mask-image:radial-gradient(ellipse 60% 55% at 50% 55%,transparent 45%,#000 100%)}
+.root{position:relative;z-index:1}
+.hud{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;margin-top:14px}
+.hud .score{margin-top:0}
+.lvl{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600}
+.lvl-bar{width:130px;height:10px;border-radius:5px;background:rgba(255,255,255,.18);overflow:hidden}
+.lvl-bar i{display:block;height:100%;width:0;background:var(--sun);border-radius:5px;transition:width .6s}
+.snd{font:600 13px/1 var(--f-body);color:var(--on-band);background:transparent;border:1.5px solid rgba(255,255,255,.35);border-radius:8px;padding:8px 10px;cursor:pointer}
+.snd[aria-pressed="false"]{opacity:.6}
+.praise{color:var(--c1);margin-inline-end:4px}
+.stars{display:flex;gap:6px;margin:6px 0 2px}
+.stars span{font-size:36px;line-height:1;color:var(--sun);display:inline-block;text-shadow:0 2px 0 var(--c5)}
+.stars span.off{color:var(--line);text-shadow:none}
+/* the ant */
+.app{overflow-x:clip}
+.ladder{position:relative}
+.antw{position:absolute;top:0;left:0;width:50px;height:40px;z-index:3;pointer-events:none}
+.ant{width:100%;height:100%;overflow:visible}
+.ant .b{fill:var(--ant)}
+.ant .ln{stroke:var(--ant);fill:none;stroke-width:3;stroke-linecap:round}
+.bub{position:absolute;bottom:100%;right:0;margin-bottom:4px;white-space:nowrap;background:var(--tile);border:1.5px solid var(--edge);border-radius:10px;
+  padding:4px 10px;font:600 13px/1.4 var(--f-body);color:var(--ink);opacity:0}
+/* welcome page */
+.welcome{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;background:var(--band);
+  padding-block:24px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));overflow:auto}
+.wcard{width:100%;max-width:440px;background:var(--paper);color:var(--ink);border-radius:20px;padding:28px 22px;text-align:center;box-shadow:0 8px 0 var(--sun)}
+.wcard .antbig{width:150px;height:120px;margin:0 auto 6px}
+.wcard h2{font-family:var(--f-display);font-weight:400;font-size:32px;line-height:1.2;margin:0 0 8px}
+.wcard p{margin:0 0 18px;color:var(--soft)}
+.wcard form{display:flex;flex-direction:column;gap:12px}
+.wcard input{font:600 20px var(--f-body);padding:12px 14px;border-radius:12px;border:2px solid var(--edge);background:var(--tile);color:var(--ink);text-align:center}
+.wcard input:focus{outline:3px solid var(--c1);outline-offset:2px}
+.wcard .btn{font-size:18px;padding:14px}
+.credit{margin-top:40px;text-align:center;font-family:var(--f-display);font-size:20px;color:var(--soft)}
+.credit b{font-weight:400;color:var(--ink)}
+/* hero band */
+.hero{position:relative;overflow:hidden;background:var(--band);color:var(--on-band);padding-block:22px 26px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.hero-in{position:relative;z-index:1;max-width:1000px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:20px}
+.kicker{margin:0 0 6px;font-size:13px;letter-spacing:.04em;opacity:.8}
+h1{font-family:var(--f-display);font-weight:400;font-size:clamp(42px,11vw,66px);line-height:1.05;margin:0;text-wrap:balance}
+h1 span{display:inline-block;background:var(--sun);color:#22307c;padding:0 .2em;border-radius:8px;transform:rotate(-2deg)}
+.sub{margin:10px 0 0;opacity:.9;max-width:50ch;font-size:15px}
+.score{display:inline-flex;align-items:baseline;gap:8px;margin-top:14px;padding:4px 14px;border:1.5px dashed var(--sun);border-radius:10px;font-size:14px}
+.score b{font-family:var(--f-display);font-weight:400;font-size:28px;color:var(--sun);display:inline-block;min-width:2ch;text-align:center}
+.hero-ladder{width:150px;flex:none}
+.hl-n{fill:var(--on-band)}.hl-p{fill:var(--sun)}.hl-line{stroke:var(--sun)}
+.fsym{position:absolute;z-index:0;font-family:var(--f-display);color:var(--on-band);opacity:.1;line-height:1;pointer-events:none;user-select:none}
+@media (max-width:520px){.hero-ladder{display:none}}
+
+/* tabs as chips with a maths symbol */
+.tabs-wrap{overflow-x:auto;margin-bottom:20px;padding-block:4px 8px}
+.tabs{display:flex;gap:8px;min-width:max-content}
+.tab{display:inline-flex;align-items:center;gap:8px;font:600 14px/1 var(--f-body);color:var(--ink);background:var(--tile);
+  border:1.5px solid var(--edge);box-shadow:0 3px 0 var(--edge);border-radius:10px;padding:6px 14px 6px 8px;cursor:pointer;white-space:nowrap}
+.tab i{font-style:normal;font-family:var(--f-display);font-size:20px;width:30px;height:30px;display:inline-grid;place-items:center;border-radius:8px;background:var(--c);color:var(--paper)}
+.tab[aria-selected="true"]{background:var(--c);border-color:var(--c);color:var(--paper);box-shadow:0 3px 0 var(--ink)}
+.tab[aria-selected="true"] i{background:var(--paper);color:var(--c)}
+
+.ptitle{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.ptitle .sym{flex:none;width:56px;height:56px;display:grid;place-items:center;border-radius:14px;background:var(--c);color:var(--paper);
+  font-family:var(--f-display);font-size:34px;line-height:1;transform:rotate(-5deg);box-shadow:0 4px 0 var(--ink)}
+.ptitle h2{font-family:var(--f-display);font-weight:400;font-size:30px;line-height:1.1;margin:0}
+.ptitle p{margin:2px 0 0;color:var(--soft);font-size:14px}
+
+.spark{position:fixed;z-index:60;pointer-events:none;font-family:var(--f-display);font-size:26px;margin:-14px 0 0 -8px}
+
+/* page 1: ladder divided place by place */
+.slots{display:inline-flex;direction:ltr;gap:2px}
+.dg{position:relative;display:inline-flex;align-items:center;justify-content:center;width:30px;height:46px;border-radius:7px;transition:background-color .2s,box-shadow .2s}
+.dg.lit{background:var(--mark);box-shadow:0 0 0 3px var(--mark)}
+.dg.lit.joinl{box-shadow:0 0 0 3px var(--mark),-16px 0 0 3px var(--mark)}
+.dg.lit .cb{color:inherit}
+.dg.box{border:2px dashed var(--soft);color:var(--soft);font-size:22px}
+.dg.box.act{border-style:solid;border-color:var(--c1);color:var(--ink);background:var(--tile)}
+.cb{position:absolute;bottom:11px;left:-14px;font-size:19px;font-weight:700;color:var(--c1);line-height:1}
+#ld .slots{gap:14px}
+#ld .row,#ld .lhead{grid-template-columns:140px 84px}
+.choices .tile{width:64px;height:64px;font-size:28px;cursor:pointer;touch-action:manipulation}
+.choices .tile.right,.choices .tile.right:disabled{background:var(--ok-bg);border-color:var(--ok);color:var(--ok);opacity:1;text-decoration:none}
+.choices .tile.no{background:var(--bad-bg);border-color:var(--bad);color:var(--bad)}
+.lhead .slots span{width:30px;font-size:10px;font-weight:700;text-align:center;letter-spacing:0}
+.ask{font:600 22px/1.8 var(--f-body);margin:0}
+.ask b{color:var(--c1)}
+.ans{display:inline-block;min-width:44px;text-align:center;border-bottom:3px solid var(--c1)}
+
+.bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:16px}
+.bar p{margin:0;font-weight:600}
+.seg{display:inline-flex;border:1.5px solid var(--ink);border-radius:8px;overflow:hidden}
+.seg button{font:600 14px/1 var(--f-body);padding:9px 14px;background:transparent;color:var(--ink);border:0;cursor:pointer}
+.seg button+button{border-inline-start:1.5px solid var(--ink)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+.btn{font:600 14px/1 var(--f-body);padding:10px 16px;border-radius:8px;border:1.5px solid var(--ink);background:transparent;color:var(--ink);cursor:pointer}
+.btn.primary{background:var(--ink);color:var(--paper)}
+
+.stage{display:grid;grid-template-columns:1fr;gap:22px}
+@media (min-width:760px){.stage{grid-template-columns:minmax(280px,1fr) 1.15fr;align-items:start}}
+.side{display:flex;flex-direction:column;gap:14px;min-width:0}
+
+/* the division ladder */
+.ladder{display:flex;flex-direction:column;align-items:center;padding-block:8px}
+.row,.lhead{display:grid;grid-template-columns:112px 84px}
+.lhead span{font-size:12px;color:var(--soft);text-align:center;letter-spacing:.02em;padding-bottom:4px}
+.row>span{display:flex;align-items:center;justify-content:center;min-height:62px;font:600 30px/1 var(--f-body);font-variant-numeric:tabular-nums}
+.row .pr{border-inline-start:3px solid var(--ink)}
+.pv{padding:4px 8px;border-radius:4px;transition:background-color .3s}
+.pv.lit{background:var(--mark)}
+.row.end .num{color:var(--ok)}
+.slot{display:inline-flex;align-items:center;justify-content:center;width:58px;height:48px;border:2px dashed var(--soft);
+  border-radius:8px;color:var(--soft);font-size:22px;cursor:pointer;transition:background-color .15s,border-color .15s}
+.num .slot{width:84px}
+.slot.over,.slot.active{border-style:solid;border-color:var(--ink);color:var(--ink)}
+.slot.over{background:var(--mark)}
+.slot.done{border:0;color:var(--ink);font-size:30px;width:auto;cursor:default}
+.hidnum{color:var(--soft)}
+
+/* tiles you pick up */
+.tray,.deck,.opts{display:flex;flex-wrap:wrap;gap:10px}
+.tile{width:56px;height:56px;border-radius:10px;background:var(--tile);border:1.5px solid var(--edge);box-shadow:0 3px 0 var(--edge);
+  font:600 24px/1 var(--f-body);color:var(--ink);cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;position:relative}
+.tile.wide{width:auto;min-width:76px;padding-inline:14px}
+.tile.dragging{z-index:50;cursor:grabbing;box-shadow:0 12px 22px var(--lift)}
+.tile.sel{outline:3px solid var(--ink);outline-offset:3px}
+.tile.hint{background:var(--mark)}
+.tile:disabled{opacity:.4;cursor:not-allowed;box-shadow:none;text-decoration:line-through}
+.tray-label{font-size:13px;color:var(--soft);margin:0}
+
+.fb{min-height:52px;padding:12px 14px;border-radius:8px;border:1.5px solid var(--line);font-size:15px;line-height:1.7}
+.fb.ok{background:var(--ok-bg);border-color:transparent;color:var(--ok)}
+.fb.bad{background:var(--bad-bg);border-color:transparent;color:var(--bad)}
+.flash{background:var(--bad-bg)!important;border-color:var(--bad)!important}
+
+.result{padding-top:6px;border-top:2px solid var(--line)}
+.result h3{font-family:var(--f-display);font-weight:400;font-size:24px;margin:10px 0 4px}
+.eq{font:600 24px/1.9 var(--f-body);margin:0;font-variant-numeric:tabular-nums}
+.eq sup{font-size:.6em}
+.f{background:linear-gradient(transparent 58%,var(--mark) 58%);padding-inline:2px;display:inline-block}
+.note{font-size:14px;color:var(--soft);margin:6px 0 12px}
+
+/* sorting game */
+.deck{justify-content:center;min-height:70px;margin-bottom:18px}
+.deck .tile{width:64px;height:64px;font-size:26px}
+.bins{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.bin{display:flex;flex-direction:column;gap:4px;text-align:start;font:inherit;color:inherit;background:transparent;
+  border:2px dashed var(--line);border-radius:12px;padding:14px;min-height:160px;cursor:pointer}
+.bin strong{font-family:var(--f-display);font-weight:400;font-size:22px;line-height:1.2}
+.bin small{color:var(--soft);font-size:13px}
+.bin.over{border-style:solid;border-color:var(--ink);background:var(--mark)}
+.got{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.mini{font:600 16px/1 var(--f-body);padding:7px 10px;border-radius:6px;background:var(--tile);border:1px solid var(--edge)}
+
+.tile.wrong{opacity:.45;cursor:not-allowed}
+.pad{display:grid;grid-template-columns:repeat(3,minmax(0,72px));gap:8px}
+.key{height:52px;border-radius:10px;background:var(--tile);border:1.5px solid var(--edge);box-shadow:0 3px 0 var(--edge);
+  font:600 24px/1 var(--f-body);color:var(--ink);cursor:pointer}
+.key:active{transform:translateY(2px);box-shadow:0 1px 0 var(--edge)}
+.key.fn{font-size:15px}
+.key.go{background:var(--ink);color:var(--paper);border-color:var(--ink);box-shadow:0 3px 0 var(--soft)}
+.tray.muted{opacity:.4}
+.qslot{width:84px;font-size:28px;color:var(--ink)}
+
+/* factor balance */
+.scale{position:relative;height:270px;width:100%;max-width:440px;margin:0 auto}
+.post{position:absolute;bottom:8px;left:50%;width:8px;height:200px;margin-left:-4px;background:var(--ink);border-radius:4px}
+.post::before{content:"";position:absolute;top:-8px;left:-6px;width:20px;height:20px;border-radius:50%;background:var(--ink)}
+.base{position:absolute;bottom:0;left:50%;width:130px;margin-left:-65px;height:12px;background:var(--ink);border-radius:6px}
+.beam{position:absolute;top:66px;left:16%;right:16%;height:8px;background:var(--ink);border-radius:4px;transform-origin:50% 50%}
+.pan{position:absolute;top:70px;width:32%;display:flex;flex-direction:column;align-items:center}
+.pan-r{right:0}.pan-l{left:0}
+.pan::before{content:"";width:0;height:46px;border-inline-start:2px solid var(--ink)}
+.dish{width:100%;min-height:72px;border:3px solid var(--ink);border-top-width:0;border-radius:0 0 60px 60px/0 0 46px 46px;
+  display:flex;flex-wrap:wrap-reverse;gap:4px;justify-content:center;align-content:flex-start;padding:8px 6px 14px;transition:background-color .15s}
+.pan-l.over .dish{background:var(--mark)}
+.weight{font-family:var(--f-display);font-weight:400;font-size:38px;line-height:1.2}
+.dish .mini{cursor:pointer;color:var(--ink)}
+.dish .mini:disabled{cursor:default;opacity:1}
+#scEq{font-size:20px;min-height:1.9em}
+button:focus-visible,.slot:focus-visible{outline:3px solid var(--rule);outline-offset:3px}
+@media (max-width:420px){.row,.lhead{grid-template-columns:100px 78px}.tile{width:52px;height:52px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+
+<canvas id="bg" aria-hidden="true"></canvas>
+<div class="welcome" id="welcome" dir="rtl" lang="ar" hidden>
+  <div class="wcard">
+    <div class="antbig"><svg class="ant" viewBox="0 0 80 64" aria-hidden="true">
+<path class="ln leg" d="M34 41 L27 56"/><path class="ln leg" d="M43 42 L43 58"/><path class="ln leg" d="M52 41 L58 56"/>
+<ellipse class="b" cx="61" cy="36" rx="15" ry="12"/><ellipse class="b" cx="43" cy="37" rx="9" ry="8"/><circle class="b" cx="24" cy="30" r="13"/>
+<path class="ln" d="M19 19 Q13 7 7 9"/><path class="ln" d="M28 18 Q29 6 37 5"/><circle class="b" cx="7" cy="9" r="3.2"/><circle class="b" cx="37" cy="5" r="3.2"/>
+<circle cx="19" cy="28" r="4.6" fill="#fff"/><circle cx="18" cy="28.6" r="2.3" fill="#1d1d1d"/>
+<circle cx="29" cy="27" r="4.6" fill="#fff"/><circle cx="28" cy="27.6" r="2.3" fill="#1d1d1d"/>
+<path d="M18 36 Q23 41 29 36" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+<circle cx="14" cy="34" r="2.3" fill="#ff8fa3" opacity=".85"/>
+</svg></div>
+    <h2>أهلًا بك في القسمة المتكررة!</h2>
+    <p>أنا النملة نمنم، وسأنزل معك درجات السُّلَّم حتى نصل إلى ١. ما اسمك؟</p>
+    <form id="wForm">
+      <label for="wName" class="visually-hidden" hidden>اسمك</label>
+      <input id="wName" aria-label="اسمك" maxlength="20" autocomplete="off" placeholder="اكتب اسمك هنا">
+      <button class="btn primary" type="submit">لنبدأ</button>
+    </form>
+  </div>
+</div>
+<div class="root" dir="rtl" lang="ar">
+<header class="hero" id="hero">
+  <div class="hero-in">
+    <div>
+      <p class="kicker">رياضيات · التحليل إلى العوامل الأولية</p>
+      <h1>القسمة <span>المتكررة</span></h1>
+      <p class="sub">نقسم العدد على عدد أولي، ونكتب الناتج تحته، ونكرّر القسمة حتى نصل إلى ١.</p>
+      <div class="hud">
+        <div class="score" aria-live="polite">النقاط <b id="score">٠</b></div>
+        <div class="lvl"><span id="lvlName">مبتدئ</span><span class="lvl-bar"><i id="lvlFill"></i></span></div>
+        <button class="snd" id="snd" aria-pressed="true">الصوت: يعمل</button>
+        <button class="snd" id="who">الطالب: —</button>
+      </div>
+    </div>
+    <svg class="hero-ladder" viewBox="0 0 170 240" aria-hidden="true" font-family="Readex Pro, Tahoma, sans-serif" font-weight="600" font-size="30" text-anchor="middle">
+      <line class="hl-line" x1="90" y1="14" x2="90" y2="228" stroke-width="4" stroke-linecap="round"/>
+      <g class="hl-row"><text class="hl-n" x="130" y="46">٦٠</text><text class="hl-p" x="50" y="46">٢</text></g>
+      <g class="hl-row"><text class="hl-n" x="130" y="90">٣٠</text><text class="hl-p" x="50" y="90">٢</text></g>
+      <g class="hl-row"><text class="hl-n" x="130" y="134">١٥</text><text class="hl-p" x="50" y="134">٣</text></g>
+      <g class="hl-row"><text class="hl-n" x="130" y="178">٥</text><text class="hl-p" x="50" y="178">٥</text></g>
+      <g class="hl-row"><text class="hl-n" x="130" y="222">١</text></g>
+    </svg>
+  </div>
+</header>
+<div class="app">
+
+  <div class="tabs-wrap">
+    <div class="tabs" role="tablist" aria-label="ألعاب الدرس">
+      <button class="tab" role="tab" data-p="p-place" aria-selected="true" style="--c:var(--c1)"><i>÷</i>منزلة منزلة</button>
+      <button class="tab" role="tab" data-p="p-ladder" aria-selected="false" style="--c:var(--c2)"><i>|</i>ابنِ السُّلَّم</button>
+      <button class="tab" role="tab" data-p="p-sort" aria-selected="false" style="--c:var(--c3)"><i>≠</i>أولي أم غير أولي؟</button>
+      <button class="tab" role="tab" data-p="p-fill" aria-selected="false" style="--c:var(--c4)"><i>؟</i>أكمل السُّلَّم</button>
+      <button class="tab" role="tab" data-p="p-rev" aria-selected="false" style="--c:var(--c5)"><i>×</i>العدد المخفي</button>
+      <button class="tab" role="tab" data-p="p-scale" aria-selected="false" style="--c:var(--c6)"><i>=</i>ميزان العوامل</button>
+    </div>
+  </div>
+
+  <!-- 0. place-by-place division -->
+  <section class="panel" id="p-place" role="tabpanel">
+    <div class="ptitle" style="--c:var(--c1)"><span class="sym">÷</span><div><h2>القسمة منزلة منزلة</h2><p>نقسم العدد خانة خانة من الكبرى إلى الصغرى، والباقي ينتقل إلى الخانة الأصغر.</p></div></div>
+    <div class="bar">
+      <p>سُلَّم القسمة للأعداد الأكبر من جدول الضرب.</p>
+      <div class="btns">
+        <button class="btn primary" id="pvBack" hidden>ارجع إلى السُّلَّم</button>
+        <button class="btn" id="pvNew">مسألة جديدة</button>
+      </div>
+    </div>
+    <div class="stage">
+      <div class="ladder" id="ld"></div>
+      <div class="side">
+        <p class="ask" id="pvAsk" aria-live="polite"></p>
+        <div class="fb" id="pvFb" aria-live="polite"></div>
+        <div class="opts choices" id="pvOpts" role="group" aria-label="اختر الإجابة"></div>
+        <div class="result" id="pvRes" hidden></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 1. build the ladder -->
+  <section class="panel" id="p-ladder" role="tabpanel" hidden>
+    <div class="ptitle" style="--c:var(--c2)"><span class="sym">|</span><div><h2>ابنِ السُّلَّم</h2><p>نقسم على عدد أولي، ونكتب الناتج تحته، حتى نصل إلى ١.</p></div></div>
+    <div class="bar">
+      <div class="seg" role="group" aria-label="المستوى">
+        <button data-level="easy" aria-pressed="true">سهل</button>
+        <button data-level="mid" aria-pressed="false">متوسط</button>
+        <button data-level="hard" aria-pressed="false">صعب</button>
+      </div>
+      <div class="btns">
+        <button class="btn" id="ladHint">تلميح</button>
+        <button class="btn" id="ladNew">عدد جديد</button>
+      </div>
+    </div>
+    <div class="stage">
+      <div class="ladder" id="lad"></div>
+      <div class="side">
+        <div class="fb" id="ladFb" aria-live="polite"></div>
+        <div class="pad" id="pad" hidden role="group" aria-label="لوحة الأرقام">
+          <button class="key" data-k="1">١</button><button class="key" data-k="2">٢</button><button class="key" data-k="3">٣</button>
+          <button class="key" data-k="4">٤</button><button class="key" data-k="5">٥</button><button class="key" data-k="6">٦</button>
+          <button class="key" data-k="7">٧</button><button class="key" data-k="8">٨</button><button class="key" data-k="9">٩</button>
+          <button class="key fn" data-k="del">حذف</button><button class="key" data-k="0">٠</button><button class="key fn go" data-k="ok">تحقّق</button>
+        </div>
+        <button class="btn" id="ladPV" hidden>صعبة؟ قسّمها منزلة منزلة</button>
+        <p class="tray-label">اسحب البطاقة إلى الخانة، أو اضغط عليها. انتبه: ليست كل البطاقات أعدادًا أولية.</p>
+        <div class="tray" id="tray"></div>
+        <div class="result" id="ladRes" hidden></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. prime sort -->
+  <section class="panel" id="p-sort" role="tabpanel" hidden>
+    <div class="ptitle" style="--c:var(--c3)"><span class="sym">≠</span><div><h2>أولي أم غير أولي؟</h2><p>العدد الأولي له عاملان فقط: ١ والعدد نفسه.</p></div></div>
+    <div class="bar">
+      <p>اسحب كل بطاقة إلى الصندوق المناسب، أو اضغط البطاقة ثم الصندوق.</p>
+      <button class="btn" id="sortNew">جولة جديدة</button>
+    </div>
+    <div class="deck" id="deck"></div>
+    <div class="bins">
+      <button class="bin" data-drop="bin" data-kind="p"><strong>عدد أولي</strong><small>له عاملان فقط: ١ والعدد نفسه</small><span class="got"></span></button>
+      <button class="bin" data-drop="bin" data-kind="c"><strong>عدد غير أولي</strong><small>له أكثر من عاملين</small><span class="got"></span></button>
+    </div>
+    <div class="fb" id="sortFb" aria-live="polite" style="margin-top:14px"></div>
+  </section>
+
+  <!-- 3. fill the gaps -->
+  <section class="panel" id="p-fill" role="tabpanel" hidden>
+    <div class="ptitle" style="--c:var(--c4)"><span class="sym">؟</span><div><h2>أكمل السُّلَّم</h2><p>كل عدد يساوي العدد الذي فوقه ÷ العامل الأولي بجانبه.</p></div></div>
+    <div class="bar">
+      <p>أكمل الخانات الفارغة في السُّلَّم.</p>
+      <button class="btn" id="fillNew">سُلَّم جديد</button>
+    </div>
+    <div class="stage">
+      <div class="ladder" id="fillLad"></div>
+      <div class="side">
+        <div class="fb" id="fillFb" aria-live="polite"></div>
+        <p class="tray-label">اختر خانة فارغة، ثم اسحب إليها العدد المناسب أو اضغط عليه.</p>
+        <div class="tray" id="chips"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. hidden number -->
+  <section class="panel" id="p-rev" role="tabpanel" hidden>
+    <div class="ptitle" style="--c:var(--c5)"><span class="sym">×</span><div><h2>العدد المخفي</h2><p>الضرب يعكس القسمة المتكررة ويعيدنا إلى العدد.</p></div></div>
+    <div class="bar">
+      <p>هذه العوامل الأولية لعدد مخفي. ما العدد؟</p>
+      <button class="btn" id="revNew">عدد جديد</button>
+    </div>
+    <div class="stage">
+      <div class="ladder" id="revLad"></div>
+      <div class="side">
+        <div class="fb" id="revFb" aria-live="polite"></div>
+        <p class="tray-label">اسحب العدد الصحيح إلى أعلى السُّلَّم، أو اضغط عليه.</p>
+        <div class="opts" id="opts"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. factor balance -->
+  <section class="panel" id="p-scale" role="tabpanel" hidden>
+    <div class="ptitle" style="--c:var(--c6)"><span class="sym">=</span><div><h2>ميزان العوامل</h2><p>حاصل ضرب العوامل الأولية يساوي العدد.</p></div></div>
+    <div class="bar">
+      <p>ضع أعدادًا أولية في الكفة الفارغة حتى يتوازن الميزان.</p>
+      <button class="btn" id="scNew">عدد جديد</button>
+    </div>
+    <div class="stage">
+      <div class="scale" aria-hidden="false">
+        <div class="post"></div><div class="base"></div>
+        <div class="beam" id="beam"></div>
+        <div class="pan pan-r" id="panR"><div class="dish"><b class="weight" id="scNum"></b></div></div>
+        <div class="pan pan-l" id="panL" data-drop="pan"><div class="dish" id="dish"></div></div>
+      </div>
+      <div class="side">
+        <div class="fb" id="scFb" aria-live="polite"></div>
+        <p class="eq" id="scEq"></p>
+        <p class="tray-label">اسحب عددًا أوليًا إلى الكفة اليسرى، أو اضغط عليه. اضغط عددًا داخل الكفة لإزالته.</p>
+        <div class="tray" id="scTray"></div>
+      </div>
+    </div>
+  </section>
+  <footer class="credit">إعداد <b>أ. ريم</b></footer>
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js"></script>
+<script>
+(function(){
+"use strict";
+/* ---------- helpers ---------- */
+const AR="٠١٢٣٤٥٦٧٨٩";
+const ar=n=>String(n).replace(/\d/g,d=>AR[+d]);
+const $=s=>document.querySelector(s);
+const isPrime=n=>{if(n<2)return false;for(let i=2;i*i<=n;i++)if(n%i===0)return false;return true};
+const spf=n=>{for(let i=2;i<=n;i++)if(n%i===0)return i;return n};
+const factors=n=>{const f=[];let m=n;while(m>1){const p=spf(m);f.push(p);m/=p}return f};
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const times=f=>f.map(ar).join(" × ");
+const powerForm=f=>{const c={};f.forEach(p=>c[p]=(c[p]||0)+1);return Object.keys(c).map(Number).sort((a,b)=>a-b).map(p=>ar(p)+(c[p]>1?"<sup>"+ar(c[p])+"</sup>":"")).join(" × ")};
+
+/* ---------- motion (GSAP, reduced-motion aware) ---------- */
+const G=window.gsap||null;
+let RM=!G;
+if(G){
+  G.defaults({ease:"power3.out",duration:.45});
+  G.matchMedia().add("(prefers-reduced-motion: reduce)",()=>{RM=true;return()=>{RM=false}});
+}
+const live=()=>G&&!RM;
+const strip=v=>{const o=Object.assign({},v);["duration","ease","stagger","delay","onComplete","clearProps"].forEach(k=>delete o[k]);return o};
+const T={
+  from(t,v){if(!live()){v.onComplete&&v.onComplete();return}return G.from(t,v)},
+  fromTo(t,a,b){if(!live()){if(G)G.set(t,strip(b));b.onComplete&&b.onComplete();return}return G.fromTo(t,a,b)},
+  later(s,fn){live()?G.delayedCall(s,fn):fn()}
+};
+function shake(el){
+  if(!el)return;
+  el.classList.add("flash");setTimeout(()=>el.classList.remove("flash"),650);
+  if(live())G.fromTo(el,{x:-9},{x:0,duration:.6,ease:"elastic.out(1,.3)"});
+}
+function pop(el){T.fromTo(el,{scale:1.35},{scale:1,duration:.45,ease:"back.out(2.2)"})}
+function burst(el){
+  sfx.win();
+  if(!live()||!el)return;
+  const r=el.getBoundingClientRect(),syms=["÷","×","=","٢","٣","٥","٧","+"];
+  for(let j=0;j<16;j++){
+    const s=document.createElement("span");s.className="spark";s.textContent=syms[j%syms.length];
+    s.style.left=(r.left+r.width/2)+"px";s.style.top=(r.top+Math.min(r.height,80)/2)+"px";s.style.color="var(--c"+(1+j%6)+")";
+    document.body.appendChild(s);
+    const a=Math.random()*Math.PI*2,d=70+Math.random()*90;
+    G.fromTo(s,{x:0,y:0,scale:.4,autoAlpha:1,rotation:0},{x:Math.cos(a)*d,y:Math.sin(a)*d-30,scale:1.2,rotation:(Math.random()-.5)*120,autoAlpha:0,duration:1,ease:"power2.out",onComplete:()=>s.remove()});
+  }
+}
+const ANT_SVG=$("#welcome .ant").outerHTML;
+function antInit(box){const a=document.createElement("div");a.className="antw";a.innerHTML=ANT_SVG+'<span class="bub"></span>';box.prepend(a);return a}
+function antTo(a,row,opt){
+  if(!a||!row||!row.offsetParent)return;
+  opt=opt||{};
+  const x=row.offsetLeft+row.offsetWidth-4,y=row.offsetTop+row.offsetHeight/2-26;
+  if(!live()||opt.instant){if(G)G.set(a,{x:x,y:y});else a.style.transform="translate("+x+"px,"+y+"px)";}
+  else{
+    G.to(a,{x:x,y:y,duration:.8,ease:"power2.inOut"});
+    G.fromTo(a.querySelectorAll(".leg"),{rotation:-18},{rotation:18,yoyo:true,repeat:7,duration:.09,transformOrigin:"50% 0%"});
+  }
+  if(opt.say)antSay(a,opt.say);
+  if(opt.cheer&&live())G.to(a,{y:y-26,yoyo:true,repeat:5,duration:.22,ease:"power1.out",delay:.8});
+}
+function antSay(a,t){
+  const b=a.querySelector(".bub");b.textContent=t;
+  if(live())G.fromTo(b,{autoAlpha:0,y:6},{autoAlpha:1,y:0,duration:.3,delay:.6,onComplete:()=>G.to(b,{autoAlpha:0,delay:2.2,duration:.4})});
+  else{b.style.opacity=1;setTimeout(()=>b.style.opacity=0,2600)}
+}
+function antRefresh(){
+  if(PV.ant&&PV.row)antTo(PV.ant,PV.row.el,{instant:true});
+  if(L.ant){const r=lad.querySelector(".row.cur")||lad.querySelector(".row.qrow")||lad.querySelector(".row.end");antTo(L.ant,r,{instant:true})}
+}
+function openTab(id){document.querySelector('.tab[data-p="'+id+'"]').click()}
+function say(el,html,type){
+  if(type==="ok"){sfx.ok();let pr=pick(PRAISE);if(studentName&&Math.random()<.5)pr=pr.replace("!"," يا "+esc(studentName)+"!");html='<b class="praise">'+pr+"</b> "+html}
+  else if(type==="bad"){sfx.bad();slips++}el.className="fb "+(type||"");el.innerHTML=html;T.fromTo(el,{autoAlpha:0,y:6},{autoAlpha:1,y:0,duration:.25})}
+
+/* ---------- sound ---------- */
+let AC=null,soundOn=true;
+try{soundOn=localStorage.getItem("sullam-sound")!=="off"}catch(e){}
+function tone(fs,dur,type,vol){
+  if(!soundOn)return;
+  try{
+    AC=AC||new (window.AudioContext||window.webkitAudioContext)();
+    const t0=AC.currentTime;
+    fs.forEach((f,i)=>{const o=AC.createOscillator(),g=AC.createGain();o.type=type||"sine";o.frequency.value=f;
+      const st=t0+i*dur;g.gain.setValueAtTime(0,st);g.gain.linearRampToValueAtTime(vol||.16,st+.01);g.gain.exponentialRampToValueAtTime(.001,st+dur*1.8);
+      o.connect(g);g.connect(AC.destination);o.start(st);o.stop(st+dur*2)});
+  }catch(e){}
+}
+const sfx={ok:()=>tone([660,990],.08),bad:()=>tone([240,190],.11,"triangle",.12),win:()=>tone([523,659,784,1047],.1),lvl:()=>tone([392,523,659,784,1047],.09)};
+const sndBtn=$("#snd");
+function sndLabel(){sndBtn.setAttribute("aria-pressed",String(soundOn));sndBtn.textContent=soundOn?"الصوت: يعمل":"الصوت: متوقف"}
+sndBtn.addEventListener("click",()=>{soundOn=!soundOn;try{localStorage.setItem("sullam-sound",soundOn?"on":"off")}catch(e){}sndLabel();if(soundOn)sfx.ok()});
+sndLabel();
+let slips=0,studentName="";
+try{studentName=localStorage.getItem("sullam-name")||""}catch(e){}
+const esc=t=>t.replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
+const PRAISE=["أحسنت!","رائع!","ممتاز!","برافو!","عمل جميل!","تفكير ذكي!"];
+function starsHTML(){const n=slips===0?3:slips<=2?2:1;let h='<div class="stars" aria-label="'+ar(n)+' نجوم">';for(let i=0;i<3;i++)h+='<span class="'+(i<n?"":"off")+'">★</span>';return h+"</div>"}
+function animStars(root){const st=root.querySelectorAll(".stars span");T.fromTo(st,{scale:0,rotation:-90},{scale:1,rotation:0,stagger:.15,duration:.5,ease:"back.out(2.5)",delay:.3})}
+
+/* ---------- score ---------- */
+const scoreEl=$("#score");let score=0;
+try{score=parseInt(localStorage.getItem("sullam-score"),10)||0}catch(e){}
+scoreEl.textContent=ar(score);
+const LEVELS=[[0,"مبتدئ"],[100,"مستكشف الأعداد"],[250,"محلّل ماهر"],[500,"خبير العوامل"],[900,"بطل الأعداد الأولية"]];
+function levelOf(sc){let i=0;LEVELS.forEach((l,j)=>{if(sc>=l[0])i=j});return i}
+function updLevel(){
+  const i=levelOf(score),lo=LEVELS[i][0],hi=LEVELS[i+1]?LEVELS[i+1][0]:lo;
+  $("#lvlName").textContent=LEVELS[i][1];
+  $("#lvlFill").style.width=(hi>lo?Math.min(100,(score-lo)/(hi-lo)*100):100)+"%";
+}
+function addScore(k){
+  const before=levelOf(score);
+  const o={v:score};score+=k;
+  updLevel();
+  if(levelOf(score)>before){sfx.lvl();setTimeout(()=>burst($("#lvlName")),300)}
+  try{localStorage.setItem("sullam-score",score)}catch(e){}
+  if(live()){G.to(o,{v:score,duration:.6,snap:{v:1},onUpdate:()=>scoreEl.textContent=ar(o.v)});pop(scoreEl)}
+  else scoreEl.textContent=ar(score);
+}
+
+/* ---------- drag & tap ---------- */
+function dropTarget(x,y,self){
+  for(const e of document.elementsFromPoint(x,y)){
+    if(self.contains(e))continue;
+    const t=e.closest("[data-drop]");if(t)return t;
+  }
+  return null;
+}
+function draggable(el,opts){
+  let id=null,sx=0,sy=0,dx=0,dy=0,dragging=false,over=null;
+  el.addEventListener("pointerdown",e=>{
+    if(el.disabled||e.button>0)return;
+    el._dragged=false;id=e.pointerId;sx=e.clientX;sy=e.clientY;dx=dy=0;dragging=false;
+    try{el.setPointerCapture(id)}catch(_){}
+    if(G)G.killTweensOf(el);
+  });
+  el.addEventListener("pointermove",e=>{
+    if(e.pointerId!==id)return;
+    dx=e.clientX-sx;dy=e.clientY-sy;
+    if(!dragging&&Math.hypot(dx,dy)>6){dragging=true;el.classList.add("dragging")}
+    if(!dragging)return;
+    e.preventDefault();
+    el.style.transform="translate("+dx+"px,"+dy+"px) scale(1.08)";
+    const t=dropTarget(e.clientX,e.clientY,el);
+    if(t!==over){over&&over.classList.remove("over");over=t;over&&over.classList.add("over")}
+  });
+  const end=(e,cancel)=>{
+    if(e.pointerId!==id)return;id=null;
+    if(!dragging)return;
+    dragging=false;el._dragged=true;el.classList.remove("dragging");
+    const t=cancel?null:over;over&&over.classList.remove("over");over=null;
+    el.style.transform="";
+    const consumed=t?opts.onDrop(t,el,dx,dy):false;
+    if(!consumed&&live())G.fromTo(el,{x:dx,y:dy,scale:1.08},{x:0,y:0,scale:1,duration:.35,clearProps:"transform"});
+  };
+  el.addEventListener("pointerup",e=>end(e,false));
+  el.addEventListener("pointercancel",e=>end(e,true));
+  el.addEventListener("click",()=>{if(el._dragged){el._dragged=false;return}opts.onTap&&opts.onTap(el)});
+}
+function vanish(el,dx,dy){
+  if(!live()){el.remove();return}
+  G.fromTo(el,{x:dx||0,y:dy||0,scale:dx||dy?1.08:1},{scale:.2,autoAlpha:0,duration:.28,ease:"power2.in",onComplete:()=>el.remove()});
+}
+
+/* ---------- tabs ---------- */
+const tabs=[...document.querySelectorAll(".tab")];
+tabs.forEach(t=>t.addEventListener("click",()=>{
+  tabs.forEach(x=>x.setAttribute("aria-selected",String(x===t)));
+  document.querySelectorAll(".panel").forEach(p=>p.hidden=p.id!==t.dataset.p);
+  T.fromTo("#"+t.dataset.p,{autoAlpha:0,y:10},{autoAlpha:1,y:0,duration:.35});
+  setTimeout(antRefresh,0);
+}));
+
+/* =========================================================
+   Game 1: build the ladder
+   ========================================================= */
+const POOLS={
+  easy:[12,16,18,20,24,27,28,30,32,36,40,42,45,48,50],
+  mid:[54,56,60,63,64,70,72,75,80,81,84,90,96,98,100],
+  hard:[108,112,120,125,126,135,140,144,150,160,168,175,180,192,200]
+};
+const TILES=[1,2,3,4,5,7,9,11,13];
+const L={level:"easy",n:0,cur:0,last:0,done:true,offOrder:false};
+const lad=$("#lad"),tray=$("#tray"),ladFb=$("#ladFb"),ladRes=$("#ladRes");
+
+function rowHTML(num){
+  return num>1
+    ?'<div class="row cur"><span class="num">'+ar(num)+'</span><span class="pr"><span class="slot" data-drop="slot" aria-label="خانة العامل الأولي">؟</span></span></div>'
+    :'<div class="row end"><span class="num">'+ar(1)+'</span><span class="pr"></span></div>';
+}
+function newLadder(){
+  let n;do{n=pick(POOLS[L.level])}while(n===L.last);
+  slips=0;
+  Object.assign(L,{n:n,cur:n,last:n,done:false,offOrder:false,phase:"prime",pend:null,buf:""});
+  ladRes.hidden=true;pad.hidden=true;ladPV.hidden=true;tray.classList.remove("muted");
+  lad.innerHTML='<div class="lhead"><span>العدد</span><span>العامل الأولي</span></div>'+rowHTML(n);
+  L.ant=antInit(lad);
+  requestAnimationFrame(()=>antTo(L.ant,lad.querySelector(".row.cur"),{instant:true}));
+  T.from(lad.children,{autoAlpha:0,y:-14,stagger:.08});
+  say(ladFb,"ما أصغر عدد أولي يقسم <b>"+ar(n)+"</b>؟ ضعه في الخانة الفارغة.");
+}
+function whyNot(c,p){
+  const u=c%10;
+  if(p===2)return ar(c)+" عدد فردي (آحاده "+ar(u)+")، فلا يقبل القسمة على ٢.";
+  if(p===3){const s=String(c).split("").reduce((a,d)=>a+ +d,0);return "مجموع أرقام "+ar(c)+" يساوي "+ar(s)+"، وهو لا يقبل القسمة على ٣، إذن "+ar(c)+" لا يقبل القسمة على ٣."}
+  if(p===5)return "آحاد "+ar(c)+" هو "+ar(u)+"، وليس ٠ أو ٥، فلا يقبل القسمة على ٥.";
+  return "قسمة "+ar(c)+" على "+ar(p)+" تترك باقيًا ("+ar(c%p)+")، فلا يقبل القسمة عليه.";
+}
+function tryPrime(p){
+  if(L.done){say(ladFb,"اكتمل هذا السُّلَّم. اضغط «عدد جديد» لتبدأ من جديد.");return}
+  if(L.phase==="quot"){say(ladFb,"احسب ناتج "+ar(L.pend.c)+" ÷ "+ar(L.pend.p)+" أولًا، واكتبه بلوحة الأرقام.");shake(lad.querySelector(".qslot"));return}
+  const c=L.cur,slot=lad.querySelector(".slot");
+  if(p===1){say(ladFb,"القسمة على ١ لا تغيّر العدد، فلن تقرّبنا من التحليل. اختر عددًا أوليًا.","bad");shake(slot);return}
+  if(!isPrime(p)){say(ladFb,ar(p)+" ليس عددًا أوليًا لأن "+ar(p)+" = "+times(factors(p))+". في السُّلَّم نقسم على الأعداد الأولية فقط.","bad");shake(slot);return}
+  if(c%p){say(ladFb,whyNot(c,p),"bad");shake(slot);return}
+  const q=c/p,s=spf(c);
+  const row=lad.querySelector(".row.cur");row.classList.remove("cur");
+  row.querySelector(".pr").innerHTML='<b class="pv">'+ar(p)+"</b>";
+  pop(row.querySelector(".pv"));
+  let msg="اختيار صحيح. الآن احسب: <b>"+ar(c)+" ÷ "+ar(p)+" = ؟</b><br>اكتب الناتج تحت "+ar(c)+" بلوحة الأرقام.";
+  if(p!==s){L.offOrder=true;msg+="<br>تذكير: نبدأ عادةً بأصغر عدد أولي يقسم العدد، وهو هنا "+ar(s)+"."}
+  say(ladFb,msg,"ok");addScore(p===s?10:5);
+  L.phase="quot";L.pend={c:c,p:p,q:q};L.buf="";tray.classList.add("muted");
+  T.later(.22,()=>{
+    lad.insertAdjacentHTML("beforeend",'<div class="row qrow"><span class="num"><span class="slot active qslot">؟</span></span><span class="pr"></span></div>');
+    T.from(lad.lastElementChild,{autoAlpha:0,y:-30,duration:.45});
+    pad.hidden=false;ladPV.hidden=!(q>10&&p<=7);
+    T.from(pad.children,{autoAlpha:0,y:8,stagger:.02,duration:.25});
+  });
+}
+const pad=$("#pad"),ladPV=$("#ladPV");
+ladPV.addEventListener("click",()=>{if(L.phase==="quot"){loadPV(L.pend.c,{prime:L.pend.p});openTab("p-place")}});
+function typeKey(k){
+  if(L.phase!=="quot")return;
+  const qs=lad.querySelector(".qslot");if(!qs)return;
+  if(k==="ok")return checkQuot();
+  if(k==="del")L.buf=L.buf.slice(0,-1);
+  else if(L.buf.length<3)L.buf=(L.buf==="0"?"":L.buf)+k;
+  qs.textContent=L.buf?ar(L.buf):"؟";
+  if(k!=="del"&&L.buf)pop(qs);
+}
+function checkQuot(){
+  const P=L.pend,qs=lad.querySelector(".qslot");
+  if(!L.buf){say(ladFb,"اكتب ناتج "+ar(P.c)+" ÷ "+ar(P.p)+" أولًا، ثم اضغط «تحقّق».");shake(qs);return}
+  const v=parseInt(L.buf,10);
+  if(v!==P.q){
+    const m=v*P.p;
+    say(ladFb,"تحقّق بالضرب: "+ar(v)+" × "+ar(P.p)+" = "+ar(m)+"، وهو "+(m>P.c?"أكبر":"أصغر")+" من "+ar(P.c)+". جرّب مرة أخرى.","bad");
+    shake(qs);L.buf="";qs.textContent="؟";return;
+  }
+  const qr=lad.querySelector(".qrow");qr.outerHTML=rowHTML(P.q);
+  pop(lad.lastElementChild.querySelector(".num"));
+  antTo(L.ant,lad.lastElementChild,{say:P.q===1?"وصلنا إلى ١!":"درجة أخرى!",cheer:P.q===1});
+  L.cur=P.q;L.phase="prime";L.pend=null;pad.hidden=true;ladPV.hidden=true;tray.classList.remove("muted");addScore(5);
+  if(P.q===1)finishLadder();
+  else say(ladFb,"<b>"+ar(P.c)+" ÷ "+ar(P.p)+" = "+ar(P.q)+"</b> صحيح.<br>والآن: ما أصغر عدد أولي يقسم "+ar(P.q)+"؟","ok");
+}
+pad.querySelectorAll(".key").forEach(b=>b.addEventListener("click",()=>typeKey(b.dataset.k)));
+document.addEventListener("keydown",e=>{
+  let fn=null;
+  if(L.phase==="quot"&&!$("#p-ladder").hidden)fn=typeKey;
+  else if(!PV.done&&!$("#p-place").hidden)fn=pvKey;
+  if(!fn)return;
+  const ai="٠١٢٣٤٥٦٧٨٩".indexOf(e.key);
+  if(/^[0-9]$/.test(e.key))fn(e.key);
+  else if(ai>=0)fn(String(ai));
+  else if(e.key==="Backspace")fn("del");
+  else if(e.key==="Enter"&&!(e.target.closest&&e.target.closest("button")))fn("ok");
+  else return;
+  e.preventDefault();
+});
+function finishLadder(){
+  L.done=true;
+  const f=factors(L.n),pv=lad.querySelectorAll(".pv");
+  ladRes.innerHTML=starsHTML()+"<h3>"+ar(L.n)+" بالعوامل الأولية</h3>"+
+    '<p class="eq">'+ar(L.n)+" = "+f.map(x=>'<span class="f">'+ar(x)+"</span>").join(" × ")+"</p>"+
+    (L.offOrder?'<p class="note">رتّبنا العوامل من الأصغر إلى الأكبر. مهما اختلف ترتيب القسمة، نحصل على العوامل الأولية نفسها.</p>':'<p class="note">العمود الأيسر في السُّلَّم هو العوامل الأولية للعدد.</p>')+
+    '<button class="btn primary" id="ladNext">عدد جديد</button>';
+  ladRes.hidden=false;
+  $("#ladNext").addEventListener("click",newLadder);animStars(ladRes);
+  say(ladFb,"وصلنا إلى ١، فاكتمل التحليل. حاصل ضرب العمود الأيسر يساوي "+ar(L.n)+".","ok");
+  addScore(20);burst(ladRes);
+  if(live()){
+    const tl=G.timeline();
+    pv.forEach((e,i)=>tl.call(()=>e.classList.add("lit"),null,i*.16));
+    tl.from(ladRes.children,{autoAlpha:0,y:14,stagger:.09},0)
+      .from(ladRes.querySelectorAll(".f"),{autoAlpha:0,y:-12,stagger:.16,duration:.35},.1);
+  }else pv.forEach(e=>e.classList.add("lit"));
+}
+TILES.forEach(v=>{
+  const b=document.createElement("button");
+  b.type="button";b.className="tile";b.textContent=ar(v);b.dataset.v=v;
+  tray.appendChild(b);
+  draggable(b,{onDrop:t=>{if(t.dataset.drop==="slot")tryPrime(v);return false},onTap:()=>tryPrime(v)});
+});
+lad.addEventListener("click",e=>{if(e.target.closest(".slot")&&L.phase!=="quot")say(ladFb,"اختر بطاقة من الأعداد واسحبها إلى هنا، أو اضغط عليها مباشرة.")});
+document.querySelectorAll(".seg button").forEach(b=>b.addEventListener("click",()=>{
+  document.querySelectorAll(".seg button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));
+  L.level=b.dataset.level;newLadder();
+}));
+$("#ladNew").addEventListener("click",newLadder);
+$("#ladHint").addEventListener("click",()=>{
+  if(L.done)return;
+  if(L.phase==="quot"){
+    const P=L.pend;
+    say(ladFb,P.p===2?"القسمة على ٢ تعني إيجاد نصف "+ar(P.c)+".":"فكّر: أي عدد إذا ضربناه في "+ar(P.p)+" كان الناتج "+ar(P.c)+"؟");
+    return;
+  }
+  const s=spf(L.cur),t=tray.querySelector('[data-v="'+s+'"]');
+  t.classList.add("hint");setTimeout(()=>t.classList.remove("hint"),1800);
+  if(live())G.fromTo(t,{scale:1},{scale:1.15,yoyo:true,repeat:3,duration:.18,ease:"power1.inOut"});
+  say(ladFb,"جرّب الأعداد الأولية بالترتيب: ٢ ثم ٣ ثم ٥ ثم ٧. البطاقة المضيئة أصغر عدد أولي يقسم "+ar(L.cur)+".");
+});
+
+/* =========================================================
+   Game 2: prime or not
+   ========================================================= */
+const PR=[2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59];
+const CO=[4,6,8,9,10,12,14,15,16,18,20,21,22,24,25,26,27,28,30,32,33,34,35,36,38,39,49,51,55,57];
+const deck=$("#deck"),sortFb=$("#sortFb");let sel=null,left=0;
+function newSort(){
+  deck.innerHTML="";sel=null;
+  document.querySelectorAll(".got").forEach(g=>g.innerHTML="");
+  const nums=shuffle(shuffle(PR).slice(0,4).concat(shuffle(CO).slice(0,4)));left=nums.length;
+  nums.forEach(n=>{
+    const b=document.createElement("button");b.type="button";b.className="tile";b.textContent=ar(n);b.dataset.v=n;
+    deck.appendChild(b);
+    draggable(b,{
+      onDrop:(t,el,dx,dy)=>t.dataset.drop==="bin"?place(el,t,dx,dy):false,
+      onTap:el=>{if(sel)sel.classList.remove("sel");sel=sel===el?null:el;sel&&sel.classList.add("sel")}
+    });
+  });
+  T.from(deck.children,{autoAlpha:0,y:16,stagger:.05});
+  say(sortFb,"تذكّر: العدد الأولي لا يقبل القسمة إلا على ١ وعلى نفسه.");
+}
+function place(el,bin,dx,dy){
+  const n=+el.dataset.v,wantPrime=bin.dataset.kind==="p",a=spf(n);
+  if(wantPrime!==isPrime(n)){
+    say(sortFb,isPrime(n)
+      ?ar(n)+" عدد أولي: لا يقبل القسمة إلا على ١ و"+ar(n)+"."+(n===2?" و٢ هو العدد الأولي الزوجي الوحيد.":"")
+      :ar(n)+" ليس أوليًا، لأن "+ar(n)+" = "+ar(a)+" × "+ar(n/a)+"، فله أكثر من عاملين.","bad");
+    shake(bin);return false;
+  }
+  if(sel===el)sel=null;
+  const chip=document.createElement("span");chip.className="mini";chip.textContent=ar(n);
+  bin.querySelector(".got").appendChild(chip);pop(chip);
+  vanish(el,dx,dy);addScore(5);left--;
+  say(sortFb,(isPrime(n)?ar(n)+" أولي: عاملاه ١ و"+ar(n)+" فقط.":ar(n)+" غير أولي: "+ar(n)+" = "+ar(a)+" × "+ar(n/a)+".")+(left?"":"<br><b>فرزت كل البطاقات. اضغط «جولة جديدة» لمجموعة أخرى.</b>"),"ok");
+  if(!left)burst($(".bins"));
+  return true;
+}
+document.querySelectorAll(".bin").forEach(b=>b.addEventListener("click",()=>{
+  if(sel)place(sel,b,0,0);else say(sortFb,"اختر بطاقة أولًا، ثم اضغط الصندوق.");
+}));
+$("#sortNew").addEventListener("click",newSort);
+
+/* =========================================================
+   Game 3: fill the ladder
+   ========================================================= */
+const fillLad=$("#fillLad"),chips=$("#chips"),fillFb=$("#fillFb");
+const RICH=POOLS.easy.concat(POOLS.mid).filter(x=>factors(x).length>=3);
+const F={n:0,nums:[],fs:[],known:{},active:null};
+function newFill(){
+  const n=pick(RICH),fs=factors(n),nums=[n];fs.forEach(p=>nums.push(nums[nums.length-1]/p));
+  Object.assign(F,{n:n,fs:fs,nums:nums,known:{},active:null});
+  const cands=[];
+  for(let i=1;i<nums.length-1;i++)cands.push({k:"n",i:i,v:nums[i]});
+  fs.forEach((v,i)=>cands.push({k:"p",i:i,v:v}));
+  let blanks;
+  do{blanks=shuffle(cands).slice(0,3)}while(blanks.some(b=>b.k==="n"&&blanks.some(x=>x.k==="p"&&x.i===b.i-1)&&blanks.some(x=>x.k==="p"&&x.i===b.i)));
+  const isBlank=(k,i)=>blanks.some(b=>b.k===k&&b.i===i);
+  const cell=(k,i,v)=>isBlank(k,i)?'<span class="slot" tabindex="0" role="button" aria-label="خانة فارغة" data-drop="blank" data-k="'+k+'" data-i="'+i+'" data-ans="'+v+'">؟</span>':ar(v);
+  let html='<div class="lhead"><span>العدد</span><span>العامل الأولي</span></div>';
+  nums.forEach((v,i)=>{
+    html+='<div class="row'+(i===nums.length-1?" end":"")+'"><span class="num">'+cell("n",i,v)+'</span><span class="pr">'+(i<fs.length?cell("p",i,fs[i]):"")+"</span></div>";
+  });
+  fillLad.innerHTML=html;
+  setActive(fillLad.querySelector(".slot"));
+  const ans=blanks.map(b=>b.v),pool=[];
+  [4,6,9,1].concat(ans.map(v=>v+1),ans.map(v=>v*2)).forEach(v=>{if(v>0&&ans.indexOf(v)<0&&pool.indexOf(v)<0)pool.push(v)});
+  chips.innerHTML="";
+  shuffle(ans.concat(shuffle(pool).slice(0,3))).forEach(v=>{
+    const b=document.createElement("button");b.type="button";b.className="tile wide";b.textContent=ar(v);b.dataset.v=v;
+    chips.appendChild(b);
+    draggable(b,{onDrop:(t,el,dx,dy)=>t.dataset.drop==="blank"?fillBlank(t,el,dx,dy):false,onTap:el=>fillBlank(F.active,el,0,0)});
+  });
+  T.from(fillLad.children,{autoAlpha:0,y:-12,stagger:.06});
+  T.from(chips.children,{autoAlpha:0,y:12,stagger:.04});
+  say(fillFb,"كل عدد في السُّلَّم = العدد الذي فوقه ÷ العامل الأولي المجاور له.");
+}
+function setActive(s){
+  fillLad.querySelectorAll(".slot.active").forEach(x=>x.classList.remove("active"));
+  F.active=s;s&&s.classList.add("active");
+}
+const knownN=i=>{const s=fillLad.querySelector('.slot[data-k="n"][data-i="'+i+'"]');return !s||s.classList.contains("done")};
+const knownP=i=>{const s=fillLad.querySelector('.slot[data-k="p"][data-i="'+i+'"]');return !s||s.classList.contains("done")};
+function fillBlank(b,chip,dx,dy){
+  if(!b||b.classList.contains("done"))return false;
+  const v=+chip.dataset.v,i=+b.dataset.i;
+  if(v!==+b.dataset.ans){
+    let hint;
+    if(b.dataset.k==="n")hint=knownN(i-1)&&knownP(i-1)?"احسب: "+ar(F.nums[i-1])+" ÷ "+ar(F.fs[i-1])+" = ؟":"هذا العدد ناتج قسمة العدد الذي فوقه على عامله الأولي.";
+    else hint=knownN(i)&&knownN(i+1)?"أي عدد أولي إذا قسمنا عليه "+ar(F.nums[i])+" كان الناتج "+ar(F.nums[i+1])+"؟":"ابحث عن أصغر عدد أولي يقسم العدد الموجود في هذا السطر.";
+    say(fillFb,ar(v)+" لا يناسب هذه الخانة. "+hint,"bad");shake(b);return false;
+  }
+  b.textContent=ar(v);b.classList.add("done");b.classList.remove("active");b.removeAttribute("data-drop");b.removeAttribute("tabindex");b.removeAttribute("role");
+  pop(b);vanish(chip,dx,dy);addScore(5);
+  const next=fillLad.querySelector('.slot:not(.done)');setActive(next);
+  if(next)say(fillFb,"صحيح. انتقل إلى الخانة التالية.","ok");
+  else{say(fillFb,"اكتمل السُّلَّم: <b>"+ar(F.n)+" = "+times(F.fs)+"</b>","ok");addScore(10);burst(fillLad)}
+  return true;
+}
+fillLad.addEventListener("click",e=>{const s=e.target.closest(".slot:not(.done)");if(s)setActive(s)});
+fillLad.addEventListener("keydown",e=>{const s=e.target.closest(".slot:not(.done)");if(s&&(e.key==="Enter"||e.key===" ")){e.preventDefault();setActive(s)}});
+$("#fillNew").addEventListener("click",newFill);
+
+/* =========================================================
+   Game 4: the hidden number
+   ========================================================= */
+const revLad=$("#revLad"),opts=$("#opts"),revFb=$("#revFb");
+const R={n:0,fs:[],done:false};
+function newRev(){
+  let n;do{n=pick(RICH)}while(n===R.n);
+  const fs=factors(n);Object.assign(R,{n:n,fs:fs,done:false});
+  let html='<div class="lhead"><span>العدد</span><span>العامل الأولي</span></div>';
+  fs.forEach((p,i)=>{
+    html+='<div class="row"><span class="num">'+(i===0?'<span class="slot" data-drop="top" aria-label="العدد المخفي">؟</span>':'<span class="hidnum" data-i="'+i+'">؟</span>')+'</span><span class="pr"><b class="pv">'+ar(p)+"</b></span></div>";
+  });
+  html+='<div class="row end"><span class="num">'+ar(1)+'</span><span class="pr"></span></div>';
+  revLad.innerHTML=html;
+  const last=fs[fs.length-1],ds=[];
+  [n/last,n*fs[0],n+fs[0],n-fs[0],n+10].forEach(v=>{if(v>3&&v!==n&&ds.indexOf(v)<0)ds.push(v)});
+  opts.innerHTML="";
+  shuffle([n].concat(shuffle(ds).slice(0,3))).forEach(v=>{
+    const b=document.createElement("button");b.type="button";b.className="tile wide";b.textContent=ar(v);b.dataset.v=v;
+    opts.appendChild(b);
+    draggable(b,{onDrop:(t,el,dx,dy)=>t.dataset.drop==="top"?choose(el,dx,dy):false,onTap:el=>choose(el,0,0)});
+  });
+  T.from(revLad.children,{autoAlpha:0,y:-12,stagger:.06});
+  T.from(opts.children,{autoAlpha:0,y:12,stagger:.05});
+  say(revFb,"فكّر بالعكس: ابدأ من ١ في الأسفل واضرب في العوامل صعودًا.");
+}
+function choose(el,dx,dy){
+  if(R.done)return false;
+  const v=+el.dataset.v;
+  if(v!==R.n){
+    el.disabled=true;el.classList.add("wrong");
+    say(revFb,ar(v)+" = "+times(factors(v))+". قارن هذه العوامل بالعوامل في السُّلَّم.","bad");
+    shake(revLad.querySelector(".slot"));return false;
+  }
+  R.done=true;
+  const nums=[R.n];R.fs.forEach(p=>nums.push(nums[nums.length-1]/p));
+  const top=revLad.querySelector(".slot");top.classList.add("done");top.removeAttribute("data-drop");
+  vanish(el,dx,dy);opts.querySelectorAll("button").forEach(b=>b.disabled=true);
+  const cells=[top].concat([...revLad.querySelectorAll(".hidnum")]);
+  const reveal=i=>{cells[i].textContent=ar(nums[i]);cells[i].classList.remove("hidnum");pop(cells[i])};
+  if(live()){
+    const tl=G.timeline();
+    for(let i=cells.length-1;i>=0;i--)tl.call(()=>reveal(i),null,(cells.length-1-i)*.38);
+  }else for(let i=cells.length-1;i>=0;i--)reveal(i);
+  say(revFb,"صحيح. بالضرب من الأسفل إلى الأعلى: <b>"+times(R.fs)+" = "+ar(R.n)+"</b><br>الضرب عكس القسمة المتكررة، فيعيدنا إلى العدد الأصلي.","ok");
+  addScore(15);burst(revLad);return true;
+}
+$("#revNew").addEventListener("click",newRev);
+
+/* =========================================================
+   Game 5: factor balance
+   ========================================================= */
+const beam=$("#beam"),panR=$("#panR"),panL=$("#panL"),dish=$("#dish"),scFb=$("#scFb"),scEq=$("#scEq"),scTray=$("#scTray");
+const SC={n:0,ps:[],done:false};
+const prodOf=a=>a.reduce((x,y)=>x*y,1);
+function scTilt(){
+  const prod=prodOf(SC.ps),a=14*(1-Math.log(prod)/Math.log(SC.n));
+  const d=Math.sin(a*Math.PI/180)*beam.offsetWidth/2;
+  if(live()){
+    const v={duration:.9,ease:"elastic.out(1,.55)"};
+    G.to(beam,Object.assign({rotation:a},v));G.to(panR,Object.assign({y:d},v));G.to(panL,Object.assign({y:-d},v));
+  }else{
+    beam.style.transform="rotate("+a+"deg)";panR.style.transform="translateY("+d+"px)";panL.style.transform="translateY("+(-d)+"px)";
+  }
+  const rem=SC.n/prod;
+  scEq.innerHTML=SC.ps.length
+    ?times(SC.ps)+" = "+ar(prod)+'<br><span class="note">المتبقي للتوازن: '+ar(rem)+"</span>"
+    :'<span class="note">الكفة فارغة. المتبقي للتوازن: '+ar(SC.n)+"</span>";
+}
+function renderDish(){
+  dish.innerHTML="";
+  SC.ps.forEach((p,i)=>{
+    const c=document.createElement("button");c.type="button";c.className="mini";c.textContent=ar(p);
+    c.setAttribute("aria-label","إزالة "+ar(p));c.disabled=SC.done;
+    c.addEventListener("click",e=>{e.stopPropagation();if(SC.done)return;SC.ps.splice(i,1);renderDish();scTilt();
+      say(scFb,"أزلت "+ar(p)+". المتبقي للتوازن الآن "+ar(SC.n/prodOf(SC.ps))+".")});
+    dish.appendChild(c);
+  });
+}
+function newScale(){
+  let n;do{n=pick(POOLS.easy.concat(POOLS.mid))}while(n===SC.n);
+  Object.assign(SC,{n:n,ps:[],done:false});
+  $("#scNum").textContent=ar(n);renderDish();scTilt();
+  say(scFb,"كفة "+ar(n)+" أثقل. أضف عوامل أولية حاصل ضربها يساوي "+ar(n)+".");
+}
+function addWeight(p){
+  if(SC.done){say(scFb,"الميزان متوازن. اضغط «عدد جديد» لتحدٍّ آخر.");return}
+  const rem=SC.n/prodOf(SC.ps);
+  if(rem%p){
+    say(scFb,p>rem
+      ?ar(p)+" أكبر من المتبقي ("+ar(rem)+")، فستصبح الكفة أثقل من العدد."
+      :ar(p)+" لا يقسم المتبقي "+ar(rem)+"، فليس من عوامله. "+whyNot(rem,p),"bad");
+    shake(dish);return;
+  }
+  SC.ps.push(p);renderDish();pop(dish.lastElementChild);scTilt();addScore(5);
+  const r=rem/p;
+  if(r===1){
+    SC.done=true;renderDish();addScore(15);burst(dish);
+    say(scFb,"توازن الميزان: <b>"+ar(SC.n)+" = "+times(SC.ps.slice().sort((a,b)=>a-b))+"</b><br>«المتبقي» في كل خطوة هو العدد الذي نكتبه تحت الخط في سُلَّم القسمة.","ok");
+  }else say(scFb,ar(rem)+" ÷ "+ar(p)+" = "+ar(r)+". المتبقي للتوازن "+ar(r)+".","ok");
+}
+[2,3,5,7,11,13].forEach(v=>{
+  const b=document.createElement("button");b.type="button";b.className="tile";b.textContent=ar(v);
+  scTray.appendChild(b);
+  draggable(b,{onDrop:t=>{if(t.dataset.drop==="pan")addWeight(v);return false},onTap:()=>addWeight(v)});
+});
+$("#scNew").addEventListener("click",newScale);
+document.querySelector('[data-p="p-scale"]').addEventListener("click",()=>setTimeout(scTilt,0));
+
+/* =========================================================
+   Page 0: ladder, each quotient found place by place
+   ========================================================= */
+const PL_NAME=["الآحاد","العشرات","المئات"],PL_C=["var(--c3)","var(--c2)","var(--c1)"];
+const POOL0=[36,40,42,48,50,54,56,60,64,70,72,75,80,84,90,96,100,108,120,126,135,144,150,160,180,200];
+const ld=$("#ld"),pvAsk=$("#pvAsk"),pvFb=$("#pvFb"),pvOpts=$("#pvOpts"),pvRes=$("#pvRes");
+const PV={n:0,K:0,cur:0,p:0,row:null,next:null,d:[],i:0,lit:[],part:0,qd:0,rem:0,phase:"prime",buf:"",box:null,done:true,fromLadder:false,single:false,offOrder:false,last:0};
+function offer(vals){
+  pvOpts.innerHTML="";pvOpts.hidden=false;
+  vals.forEach(v=>{const b=document.createElement("button");b.type="button";b.className="tile";b.textContent=ar(v);b.dataset.v=v;
+    b.addEventListener("click",()=>choose(v,b));pvOpts.appendChild(b)});
+  T.from(pvOpts.children,{autoAlpha:0,y:10,stagger:.04,duration:.25});
+}
+function near(ans,lo,hi){const s=[ans];[ans+1,ans-1,ans+2,ans-2,ans+3,ans-3].forEach(x=>{if(x>=lo&&x<=hi&&s.indexOf(x)<0&&s.length<4)s.push(x)});return s.sort((a,b)=>a-b)}
+function choose(v,b){
+  if(PV.done||!PV.box||b.disabled)return;
+  const olds=[...pvOpts.querySelectorAll("button")];
+  PV.buf=String(v);PV.box.textContent=ar(v);PV.wasWrong=false;
+  checkPV();
+  if(PV.wasWrong){b.disabled=true;b.classList.add("no");shake(b)}
+  else{b.classList.add("right");pop(b);olds.forEach(x=>x.disabled=true)}
+}
+const plName=i=>PL_NAME[PV.K-1-i];
+function digitsOf(v){const s=String(v);return Array(PV.K-s.length).fill(null).concat(s.split("").map(Number))}
+function makeRow(v){
+  const el=document.createElement("div");el.className="row";
+  const num=document.createElement("span");num.className="num";
+  const sl=document.createElement("span");sl.className="slots";num.appendChild(sl);
+  const ds=[];for(let j=0;j<PV.K;j++){const d=document.createElement("span");d.className="dg";sl.appendChild(d);ds.push(d)}
+  if(v!=null)digitsOf(v).forEach((x,j)=>ds[j].textContent=x==null?"":ar(x));
+  const pr=document.createElement("span");pr.className="pr";
+  el.append(num,pr);ld.appendChild(el);
+  return {el:el,ds:ds,pr:pr};
+}
+function loadPV(n,opts){
+  opts=opts||{};slips=0;
+  Object.assign(PV,{n:n,K:String(n).length,cur:n,done:false,fromLadder:!!opts.prime,single:!!opts.prime,offOrder:false,buf:"",box:null,lit:[]});
+  pvRes.hidden=true;pvOpts.hidden=false;$("#pvBack").hidden=!PV.fromLadder;
+  let head='<div class="lhead"><span><span class="slots">';
+  for(let j=0;j<PV.K;j++)head+='<span style="color:'+PL_C[PV.K-1-j]+'">'+PL_NAME[PV.K-1-j].replace("ال","")+"</span>";
+  ld.innerHTML=head+"</span></span><span>العامل الأولي</span></div>";
+  PV.ant=antInit(ld);
+  PV.row=makeRow(n);
+  requestAnimationFrame(()=>antTo(PV.ant,PV.row.el,{instant:true,say:"هيا ننزل السُّلَّم!"}));
+  T.from(ld.children,{autoAlpha:0,y:-12,stagger:.08});
+  if(opts.prime)setPrime(opts.prime,"نقسم "+ar(n)+" على "+ar(opts.prime)+" خانة خانة.");
+  else askPrime();
+}
+function askPrime(msg,type){
+  PV.phase="prime";PV.buf="";
+  PV.row.pr.innerHTML='<span class="slot active">؟</span>';PV.box=PV.row.pr.firstChild;
+  pvAsk.innerHTML="على أي عدد أولي نقسم <b>"+ar(PV.cur)+"</b>؟";
+  offer([2,3,4,5,7]);
+  say(pvFb,(msg?msg+"<br>":"")+"ابدأ بأصغر الأعداد الأولية: ٢ ثم ٣ ثم ٥ ثم ٧.",type);
+}
+function light(idx){
+  PV.row.ds.forEach(d=>d.classList.remove("lit","joinl"));PV.lit=idx;
+  const els=idx.map(j=>PV.row.ds[j]);
+  els.forEach((e,j)=>{e.classList.add("lit");if(j>0||e.querySelector(".cb"))e.classList.add("joinl")});
+  T.fromTo(els,{scale:1.3},{scale:1,duration:.45,ease:"back.out(2.2)"});
+}
+function setPrime(p,msg){
+  PV.p=p;PV.row.pr.innerHTML='<b class="pv">'+ar(p)+"</b>";pop(PV.row.pr.firstChild);
+  PV.next=makeRow(null);T.from(PV.next.el,{autoAlpha:0,y:-24,duration:.4});
+  PV.d=digitsOf(PV.cur);
+  let f=PV.d.findIndex(x=>x!=null),part=PV.d[f],idx=[f];
+  if(part<p&&f<PV.K-1){
+    const two=part*10+PV.d[f+1];
+    msg=(msg?msg+"<br>":"")+"الـ"+ar(part)+" أقل من "+ar(p)+"، فنأخذ معه الرقم الذي بجانبه: الـ"+ar(two)+".";
+    f++;part=two;idx=[f-1,f];
+  }
+  PV.i=f;PV.part=part;
+  T.later(.35,()=>askQ(idx,msg));
+}
+function askQ(idx,msg){
+  PV.phase="q";PV.buf="";PV.qd=Math.floor(PV.part/PV.p);
+  light(idx);
+  const b=PV.next.ds[PV.i];b.classList.add("box","act");b.textContent="؟";PV.box=b;
+  pvAsk.innerHTML="كم <b>"+ar(PV.p)+"</b> في الـ<b>"+ar(PV.part)+"</b>؟";
+  offer(near(PV.qd,0,9));
+  say(pvFb,msg||"خانة "+plName(PV.i)+". اختر الجواب من الأسفل.");
+}
+function pvKey(k){
+  if(PV.done)return;
+  const b=pvOpts.querySelector('[data-v="'+k+'"]:not(:disabled)');if(b)b.click();
+}
+function checkPV(){
+  const box=PV.box;
+  if(!PV.buf){say(pvFb,"اكتب الجواب أولًا، ثم اضغط «تحقّق».");shake(box);return}
+  const v=parseInt(PV.buf,10),p=PV.p;
+  const wrong=m=>{PV.wasWrong=true;say(pvFb,m,"bad");shake(box);PV.buf="";box.textContent="؟"};
+  if(PV.phase==="prime"){
+    const c=PV.cur;
+    if(v===1)return wrong("القسمة على ١ لا تغيّر العدد. اختر عددًا أوليًا.");
+    if(!isPrime(v))return wrong(ar(v)+" ليس عددًا أوليًا لأن "+ar(v)+" = "+times(factors(v))+".");
+    if(c%v)return wrong(whyNot(c,v));
+    if(v!==spf(c))PV.offOrder=true;
+    PV.box=null;addScore(5);
+    return setPrime(v,v!==spf(c)?"صحيح، لكن الأصغر هو "+ar(spf(c))+". نكمل بـ"+ar(v)+".":"");
+  }
+  if(PV.phase==="q"){
+    if(v!==PV.qd){
+      const m=v*p;
+      return wrong(m>PV.part
+        ?ar(v)+" × "+ar(p)+" = "+ar(m)+"، وهذا أكثر من "+ar(PV.part)+". جرّب عددًا أصغر."
+        :ar(v)+" × "+ar(p)+" = "+ar(m)+"، ويبقى "+ar(PV.part-m)+"، وهذا يكفي لـ"+ar(p)+" أخرى. جرّب عددًا أكبر.");
+    }
+    box.classList.remove("box","act");box.textContent=ar(v);pop(box);addScore(3);
+    PV.rem=PV.part-v*p;PV.box=null;
+    if(PV.i===PV.K-1)return rowDone();
+    if(PV.rem===0){
+      say(pvFb,ar(v)+" × "+ar(p)+" = "+ar(v*p)+"، ولا يبقى شيء.","ok");
+      return T.later(.7,()=>{PV.i++;PV.part=PV.d[PV.i];askQ([PV.i])});
+    }
+    PV.phase="r";PV.buf="";
+    pvAsk.innerHTML="كم يبقى من الـ"+ar(PV.part)+"؟ "+'<span class="ans">؟</span>';
+    PV.box=pvAsk.querySelector(".ans");
+    offer(near(PV.rem,0,Math.max(p-1,3)));
+    say(pvFb,ar(v)+" × "+ar(p)+" = "+ar(v*p)+".","ok");
+    return;
+  }
+  if(PV.phase==="r"){
+    if(v!==PV.rem)return wrong(ar(PV.qd)+" × "+ar(p)+" = "+ar(PV.qd*p)+". كم يبقى من الـ"+ar(PV.part)+"؟");
+    addScore(3);PV.box=null;
+    const from=PV.row.ds[PV.lit[PV.lit.length-1]],to=PV.row.ds[PV.i+1];
+    const cb=document.createElement("span");cb.className="cb";cb.textContent=ar(v);to.appendChild(cb);
+    if(live()){const a=from.getBoundingClientRect(),b=cb.getBoundingClientRect();
+      G.from(cb,{x:a.left+a.width/2-b.left,y:a.top+a.height/2-b.top,scale:2,duration:.7,ease:"power2.inOut"})}
+    const np=v*10+PV.d[PV.i+1];
+    say(pvFb,"الـ"+ar(v)+" الباقي ينتقل إلى خانة "+plName(PV.i+1)+"، فيصبح معنا الـ"+ar(np)+".","ok");
+    pvAsk.innerHTML="";
+    T.later(.9,()=>{PV.i++;PV.part=np;askQ([PV.i],"الـ"+ar(v)+" الباقي مع الـ"+ar(PV.d[PV.i])+" يصبح الـ"+ar(np)+".")});
+  }
+}
+function rowDone(){
+  const prev=PV.cur,p=PV.p,q=prev/p;
+  PV.row.ds.forEach(d=>d.classList.remove("lit","joinl"));
+  PV.cur=q;PV.row=PV.next;PV.next=null;addScore(5);
+  antTo(PV.ant,PV.row.el,{say:q===1?"وصلنا إلى ١!":pick(["درجة أخرى!","هيا نكمل!","أحسنت!"])});
+  if(PV.single){
+    PV.done=true;pvOpts.hidden=true;
+    pvAsk.innerHTML=ar(prev)+" ÷ "+ar(p)+' = <span class="f">'+ar(q)+"</span>";
+    say(pvFb,"أحسنت. ارجع إلى السُّلَّم واكتب "+ar(q)+" تحت "+ar(prev)+".","ok");burst(ld);return;
+  }
+  if(q===1){PV.row.el.classList.add("end");return finishPV()}
+  askPrime(ar(prev)+" ÷ "+ar(p)+" = "+ar(q)+". نكرّر القسمة على "+ar(q)+".","ok");
+}
+function finishPV(){
+  PV.done=true;pvOpts.hidden=true;PV.box=null;
+  const f=factors(PV.n);
+  antTo(PV.ant,PV.row.el,{cheer:true});
+  pvAsk.innerHTML="وصلنا إلى ١";
+  pvRes.innerHTML=starsHTML()+"<h3>"+ar(PV.n)+" بالعوامل الأولية</h3>"+
+    '<p class="eq">'+ar(PV.n)+" = "+f.map(x=>'<span class="f">'+ar(x)+"</span>").join(" × ")+"</p>"+
+    '<button class="btn primary" id="pvNext">عدد جديد</button>';
+  pvRes.hidden=false;$("#pvNext").addEventListener("click",newPV);animStars(pvRes);
+  say(pvFb,"اكتمل السُّلَّم. العمود الأيسر هو العوامل الأولية للعدد "+ar(PV.n)+".","ok");
+  addScore(15);burst(pvRes);
+  const pv=ld.querySelectorAll(".pv");
+  if(live()){const tl=G.timeline();pv.forEach((e,i)=>tl.call(()=>e.classList.add("lit"),null,i*.16));tl.from(pvRes.children,{autoAlpha:0,y:12,stagger:.08},0)}
+  else pv.forEach(e=>e.classList.add("lit"));
+}
+function newPV(){let n;do{n=pick(POOL0)}while(n===PV.last);PV.last=n;loadPV(n)}
+function genPV(){return [pick(POOL0)]}
+$("#pvNew").addEventListener("click",newPV);
+$("#pvBack").addEventListener("click",()=>openTab("p-ladder"));
+
+/* ---------- Ulam spiral background ---------- */
+(function(){
+  const cv=$("#bg");if(!cv.getContext)return;
+  const ctx=cv.getContext("2d");if(!ctx)return;
+  function draw(){
+    const dpr=Math.min(window.devicePixelRatio||1,2),w=innerWidth,h=innerHeight;
+    cv.width=w*dpr;cv.height=h*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);
+    const cs=getComputedStyle(document.documentElement);
+    const cols=[1,2,3,4,5,6].map(i=>cs.getPropertyValue("--c"+i).trim()||"#888");
+    const dark=cs.getPropertyValue("color-scheme").indexOf("dark")>=0||matchMedia("(prefers-color-scheme: dark)").matches&&document.documentElement.dataset.theme!=="light";
+    const step=26,cx=w*.5,cy=h*.62;
+    let x=0,y=0,n=1,len=1,dir=0;const dx=[1,0,-1,0],dy=[0,-1,0,1];
+    const limit=Math.ceil(Math.max(w,h)/step)+2;
+    ctx.textAlign="center";ctx.textBaseline="middle";
+    while(Math.abs(x)<=limit||Math.abs(y)<=limit){
+      for(let t=0;t<2;t++){
+        for(let s2=0;s2<len;s2++){
+          if(isPrime(n)){
+            const px=cx+x*step,py=cy+y*step;
+            if(px>-10&&px<w+10&&py>-10&&py<h+10){
+              ctx.globalAlpha=dark?.32:.26;ctx.fillStyle=cols[n%6];
+              ctx.beginPath();ctx.arc(px,py,2.6,0,Math.PI*2);ctx.fill();
+            }
+          }
+          x+=dx[dir];y+=dy[dir];n++;
+        }
+        dir=(dir+1)%4;
+      }
+      len++;
+      if(len>limit*2+4)break;
+    }
+    ctx.globalAlpha=1;
+  }
+  let to;addEventListener("resize",()=>{clearTimeout(to);to=setTimeout(draw,150)});
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change",draw);
+  new MutationObserver(draw).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+  (document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve()).then(draw);draw();
+})();
+
+/* ---------- hero decoration ---------- */
+(function(){
+  const hero=$("#hero");
+  [["÷",4,10,64],["×",22,66,40],["=",46,16,34],["٧",64,72,48],["٣",82,8,38],["+",92,58,30],["٢",36,86,30],["٥",74,38,26]]
+    .forEach(s=>{const e=document.createElement("span");e.className="fsym";e.textContent=s[0];
+      e.style.left=s[1]+"%";e.style.top=s[2]+"%";e.style.fontSize=s[3]+"px";hero.appendChild(e)});
+})();
+
+/* ---------- welcome / name ---------- */
+const welcome=$("#welcome"),who=$("#who");
+function setWho(){who.textContent="الطالب: "+(studentName||"—")}
+function openWelcome(){
+  welcome.hidden=false;$("#wName").value=studentName;
+  if(live()){G.fromTo(".wcard",{y:30,autoAlpha:0},{y:0,autoAlpha:1,duration:.5});G.fromTo(".antbig",{rotation:-8},{rotation:8,yoyo:true,repeat:5,duration:.3,ease:"sine.inOut",transformOrigin:"50% 90%"})}
+  setTimeout(()=>{try{$("#wName").focus()}catch(e){}},300);
+}
+$("#wForm").addEventListener("submit",e=>{
+  e.preventDefault();
+  const v=$("#wName").value.trim();
+  if(!v){shake($("#wName"));$("#wName").placeholder="اكتب اسمك أولًا";return}
+  studentName=v.slice(0,20);try{localStorage.setItem("sullam-name",studentName)}catch(_){}
+  setWho();sfx.win();
+  const done=()=>{welcome.hidden=true;antRefresh();say(pvFb,"أهلًا يا "+esc(studentName)+"! نمنم جاهزة. على أي عدد أولي نقسم "+ar(PV.cur)+"؟")};
+  if(live())G.to(welcome,{autoAlpha:0,duration:.35,onComplete:()=>{done();G.set(welcome,{clearProps:"opacity,visibility"})}});else done();
+});
+who.addEventListener("click",openWelcome);
+setWho();
+
+/* ---------- start ---------- */
+updLevel();
+if(!studentName)openWelcome();
+newLadder();newSort();newFill();newRev();newScale();
+newPV();
+if(live()){
+  G.timeline()
+    .from(".hl-line",{scaleY:0,transformOrigin:"50% 0%",duration:.9,ease:"power2.inOut"},.2)
+    .from(".hl-row",{autoAlpha:0,y:-12,stagger:.18,duration:.4},.35)
+    .from(".fsym",{autoAlpha:0,scale:.5,rotation:-30,stagger:.05,duration:.6},.2);
+}
+if(live()){
+  G.timeline()
+    .from("header h1",{autoAlpha:0,y:18,duration:.6})
+    .from(".sub,.score",{autoAlpha:0,y:10,stagger:.08},"-=.35")
+    .from(".tabs",{autoAlpha:0,y:8},"-=.3");
+}
+})();
+</script>
+
+</body>
+</html>
