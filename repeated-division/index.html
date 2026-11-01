@@ -281,7 +281,6 @@ button:focus-visible,.slot:focus-visible{outline:3px solid var(--rule);outline-o
   <div class="tabs-wrap">
     <div class="tabs" role="tablist" aria-label="ألعاب الدرس">
       <button class="tab" role="tab" data-p="p-place" aria-selected="true" style="--c:var(--c1)"><i>÷</i>منزلة منزلة</button>
-      <button class="tab" role="tab" data-p="p-ladder" aria-selected="false" style="--c:var(--c2)"><i>|</i>ابنِ السُّلَّم</button>
       <button class="tab" role="tab" data-p="p-sort" aria-selected="false" style="--c:var(--c3)"><i>≠</i>أولي أم غير أولي؟</button>
       <button class="tab" role="tab" data-p="p-fill" aria-selected="false" style="--c:var(--c4)"><i>؟</i>أكمل السُّلَّم</button>
       <button class="tab" role="tab" data-p="p-rev" aria-selected="false" style="--c:var(--c5)"><i>×</i>العدد المخفي</button>
@@ -295,7 +294,6 @@ button:focus-visible,.slot:focus-visible{outline:3px solid var(--rule);outline-o
     <div class="bar">
       <p>سُلَّم القسمة للأعداد الأكبر من جدول الضرب.</p>
       <div class="btns">
-        <button class="btn primary" id="pvBack" hidden>ارجع إلى السُّلَّم</button>
         <button class="btn" id="pvNew">مسألة جديدة</button>
       </div>
     </div>
@@ -306,38 +304,6 @@ button:focus-visible,.slot:focus-visible{outline:3px solid var(--rule);outline-o
         <div class="fb" id="pvFb" aria-live="polite"></div>
         <div class="opts choices" id="pvOpts" role="group" aria-label="اختر الإجابة"></div>
         <div class="result" id="pvRes" hidden></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- 1. build the ladder -->
-  <section class="panel" id="p-ladder" role="tabpanel" hidden>
-    <div class="ptitle" style="--c:var(--c2)"><span class="sym">|</span><div><h2>ابنِ السُّلَّم</h2><p>نقسم على عدد أولي، ونكتب الناتج تحته، حتى نصل إلى ١.</p></div></div>
-    <div class="bar">
-      <div class="seg" role="group" aria-label="المستوى">
-        <button data-level="easy" aria-pressed="true">سهل</button>
-        <button data-level="mid" aria-pressed="false">متوسط</button>
-        <button data-level="hard" aria-pressed="false">صعب</button>
-      </div>
-      <div class="btns">
-        <button class="btn" id="ladHint">تلميح</button>
-        <button class="btn" id="ladNew">عدد جديد</button>
-      </div>
-    </div>
-    <div class="stage">
-      <div class="ladder" id="lad"></div>
-      <div class="side">
-        <div class="fb" id="ladFb" aria-live="polite"></div>
-        <div class="pad" id="pad" hidden role="group" aria-label="لوحة الأرقام">
-          <button class="key" data-k="1">١</button><button class="key" data-k="2">٢</button><button class="key" data-k="3">٣</button>
-          <button class="key" data-k="4">٤</button><button class="key" data-k="5">٥</button><button class="key" data-k="6">٦</button>
-          <button class="key" data-k="7">٧</button><button class="key" data-k="8">٨</button><button class="key" data-k="9">٩</button>
-          <button class="key fn" data-k="del">حذف</button><button class="key" data-k="0">٠</button><button class="key fn go" data-k="ok">تحقّق</button>
-        </div>
-        <button class="btn" id="ladPV" hidden>صعبة؟ قسّمها منزلة منزلة</button>
-        <p class="tray-label">اسحب البطاقة إلى الخانة، أو اضغط عليها. انتبه: ليست كل البطاقات أعدادًا أولية.</p>
-        <div class="tray" id="tray"></div>
-        <div class="result" id="ladRes" hidden></div>
       </div>
     </div>
   </section>
@@ -486,7 +452,6 @@ function antSay(a,t){
 }
 function antRefresh(){
   if(PV.ant&&PV.row)antTo(PV.ant,PV.row.el,{instant:true});
-  if(L.ant){const r=lad.querySelector(".row.cur")||lad.querySelector(".row.qrow")||lad.querySelector(".row.end");antTo(L.ant,r,{instant:true})}
 }
 function openTab(id){document.querySelector('.tab[data-p="'+id+'"]').click()}
 function say(el,html,type){
@@ -592,34 +557,12 @@ tabs.forEach(t=>t.addEventListener("click",()=>{
   setTimeout(antRefresh,0);
 }));
 
-/* =========================================================
-   Game 1: build the ladder
-   ========================================================= */
+/* shared number pools and divisibility reasons */
 const POOLS={
   easy:[12,16,18,20,24,27,28,30,32,36,40,42,45,48,50],
   mid:[54,56,60,63,64,70,72,75,80,81,84,90,96,98,100],
   hard:[108,112,120,125,126,135,140,144,150,160,168,175,180,192,200]
 };
-const TILES=[1,2,3,4,5,7,9,11,13];
-const L={level:"easy",n:0,cur:0,last:0,done:true,offOrder:false};
-const lad=$("#lad"),tray=$("#tray"),ladFb=$("#ladFb"),ladRes=$("#ladRes");
-
-function rowHTML(num){
-  return num>1
-    ?'<div class="row cur"><span class="num">'+ar(num)+'</span><span class="pr"><span class="slot" data-drop="slot" aria-label="خانة العامل الأولي">؟</span></span></div>'
-    :'<div class="row end"><span class="num">'+ar(1)+'</span><span class="pr"></span></div>';
-}
-function newLadder(){
-  let n;do{n=pick(POOLS[L.level])}while(n===L.last);
-  slips=0;
-  Object.assign(L,{n:n,cur:n,last:n,done:false,offOrder:false,phase:"prime",pend:null,buf:""});
-  ladRes.hidden=true;pad.hidden=true;ladPV.hidden=true;tray.classList.remove("muted");
-  lad.innerHTML='<div class="lhead"><span>العدد</span><span>العامل الأولي</span></div>'+rowHTML(n);
-  L.ant=antInit(lad);
-  requestAnimationFrame(()=>antTo(L.ant,lad.querySelector(".row.cur"),{instant:true}));
-  T.from(lad.children,{autoAlpha:0,y:-14,stagger:.08});
-  say(ladFb,"ما أصغر عدد أولي يقسم <b>"+ar(n)+"</b>؟ ضعه في الخانة الفارغة.");
-}
 function whyNot(c,p){
   const u=c%10;
   if(p===2)return ar(c)+" عدد فردي (آحاده "+ar(u)+")، فلا يقبل القسمة على ٢.";
@@ -627,111 +570,6 @@ function whyNot(c,p){
   if(p===5)return "آحاد "+ar(c)+" هو "+ar(u)+"، وليس ٠ أو ٥، فلا يقبل القسمة على ٥.";
   return "قسمة "+ar(c)+" على "+ar(p)+" تترك باقيًا ("+ar(c%p)+")، فلا يقبل القسمة عليه.";
 }
-function tryPrime(p){
-  if(L.done){say(ladFb,"اكتمل هذا السُّلَّم. اضغط «عدد جديد» لتبدأ من جديد.");return}
-  if(L.phase==="quot"){say(ladFb,"احسب ناتج "+ar(L.pend.c)+" ÷ "+ar(L.pend.p)+" أولًا، واكتبه بلوحة الأرقام.");shake(lad.querySelector(".qslot"));return}
-  const c=L.cur,slot=lad.querySelector(".slot");
-  if(p===1){say(ladFb,"القسمة على ١ لا تغيّر العدد، فلن تقرّبنا من التحليل. اختر عددًا أوليًا.","bad");shake(slot);return}
-  if(!isPrime(p)){say(ladFb,ar(p)+" ليس عددًا أوليًا لأن "+ar(p)+" = "+times(factors(p))+". في السُّلَّم نقسم على الأعداد الأولية فقط.","bad");shake(slot);return}
-  if(c%p){say(ladFb,whyNot(c,p),"bad");shake(slot);return}
-  const q=c/p,s=spf(c);
-  const row=lad.querySelector(".row.cur");row.classList.remove("cur");
-  row.querySelector(".pr").innerHTML='<b class="pv">'+ar(p)+"</b>";
-  pop(row.querySelector(".pv"));
-  let msg="اختيار صحيح. الآن احسب: <b>"+ar(c)+" ÷ "+ar(p)+" = ؟</b><br>اكتب الناتج تحت "+ar(c)+" بلوحة الأرقام.";
-  if(p!==s){L.offOrder=true;msg+="<br>تذكير: نبدأ عادةً بأصغر عدد أولي يقسم العدد، وهو هنا "+ar(s)+"."}
-  say(ladFb,msg,"ok");addScore(p===s?10:5);
-  L.phase="quot";L.pend={c:c,p:p,q:q};L.buf="";tray.classList.add("muted");
-  T.later(.22,()=>{
-    lad.insertAdjacentHTML("beforeend",'<div class="row qrow"><span class="num"><span class="slot active qslot">؟</span></span><span class="pr"></span></div>');
-    T.from(lad.lastElementChild,{autoAlpha:0,y:-30,duration:.45});
-    pad.hidden=false;ladPV.hidden=!(q>10&&p<=7);
-    T.from(pad.children,{autoAlpha:0,y:8,stagger:.02,duration:.25});
-  });
-}
-const pad=$("#pad"),ladPV=$("#ladPV");
-ladPV.addEventListener("click",()=>{if(L.phase==="quot"){loadPV(L.pend.c,{prime:L.pend.p});openTab("p-place")}});
-function typeKey(k){
-  if(L.phase!=="quot")return;
-  const qs=lad.querySelector(".qslot");if(!qs)return;
-  if(k==="ok")return checkQuot();
-  if(k==="del")L.buf=L.buf.slice(0,-1);
-  else if(L.buf.length<3)L.buf=(L.buf==="0"?"":L.buf)+k;
-  qs.textContent=L.buf?ar(L.buf):"؟";
-  if(k!=="del"&&L.buf)pop(qs);
-}
-function checkQuot(){
-  const P=L.pend,qs=lad.querySelector(".qslot");
-  if(!L.buf){say(ladFb,"اكتب ناتج "+ar(P.c)+" ÷ "+ar(P.p)+" أولًا، ثم اضغط «تحقّق».");shake(qs);return}
-  const v=parseInt(L.buf,10);
-  if(v!==P.q){
-    const m=v*P.p;
-    say(ladFb,"تحقّق بالضرب: "+ar(v)+" × "+ar(P.p)+" = "+ar(m)+"، وهو "+(m>P.c?"أكبر":"أصغر")+" من "+ar(P.c)+". جرّب مرة أخرى.","bad");
-    shake(qs);L.buf="";qs.textContent="؟";return;
-  }
-  const qr=lad.querySelector(".qrow");qr.outerHTML=rowHTML(P.q);
-  pop(lad.lastElementChild.querySelector(".num"));
-  antTo(L.ant,lad.lastElementChild,{say:P.q===1?"وصلنا إلى ١!":"درجة أخرى!",cheer:P.q===1});
-  L.cur=P.q;L.phase="prime";L.pend=null;pad.hidden=true;ladPV.hidden=true;tray.classList.remove("muted");addScore(5);
-  if(P.q===1)finishLadder();
-  else say(ladFb,"<b>"+ar(P.c)+" ÷ "+ar(P.p)+" = "+ar(P.q)+"</b> صحيح.<br>والآن: ما أصغر عدد أولي يقسم "+ar(P.q)+"؟","ok");
-}
-pad.querySelectorAll(".key").forEach(b=>b.addEventListener("click",()=>typeKey(b.dataset.k)));
-document.addEventListener("keydown",e=>{
-  let fn=null;
-  if(L.phase==="quot"&&!$("#p-ladder").hidden)fn=typeKey;
-  else if(!PV.done&&!$("#p-place").hidden)fn=pvKey;
-  if(!fn)return;
-  const ai="٠١٢٣٤٥٦٧٨٩".indexOf(e.key);
-  if(/^[0-9]$/.test(e.key))fn(e.key);
-  else if(ai>=0)fn(String(ai));
-  else if(e.key==="Backspace")fn("del");
-  else if(e.key==="Enter"&&!(e.target.closest&&e.target.closest("button")))fn("ok");
-  else return;
-  e.preventDefault();
-});
-function finishLadder(){
-  L.done=true;
-  const f=factors(L.n),pv=lad.querySelectorAll(".pv");
-  ladRes.innerHTML=starsHTML()+"<h3>"+ar(L.n)+" بالعوامل الأولية</h3>"+
-    '<p class="eq">'+ar(L.n)+" = "+f.map(x=>'<span class="f">'+ar(x)+"</span>").join(" × ")+"</p>"+
-    (L.offOrder?'<p class="note">رتّبنا العوامل من الأصغر إلى الأكبر. مهما اختلف ترتيب القسمة، نحصل على العوامل الأولية نفسها.</p>':'<p class="note">العمود الأيسر في السُّلَّم هو العوامل الأولية للعدد.</p>')+
-    '<button class="btn primary" id="ladNext">عدد جديد</button>';
-  ladRes.hidden=false;
-  $("#ladNext").addEventListener("click",newLadder);animStars(ladRes);
-  say(ladFb,"وصلنا إلى ١، فاكتمل التحليل. حاصل ضرب العمود الأيسر يساوي "+ar(L.n)+".","ok");
-  addScore(20);burst(ladRes);
-  if(live()){
-    const tl=G.timeline();
-    pv.forEach((e,i)=>tl.call(()=>e.classList.add("lit"),null,i*.16));
-    tl.from(ladRes.children,{autoAlpha:0,y:14,stagger:.09},0)
-      .from(ladRes.querySelectorAll(".f"),{autoAlpha:0,y:-12,stagger:.16,duration:.35},.1);
-  }else pv.forEach(e=>e.classList.add("lit"));
-}
-TILES.forEach(v=>{
-  const b=document.createElement("button");
-  b.type="button";b.className="tile";b.textContent=ar(v);b.dataset.v=v;
-  tray.appendChild(b);
-  draggable(b,{onDrop:t=>{if(t.dataset.drop==="slot")tryPrime(v);return false},onTap:()=>tryPrime(v)});
-});
-lad.addEventListener("click",e=>{if(e.target.closest(".slot")&&L.phase!=="quot")say(ladFb,"اختر بطاقة من الأعداد واسحبها إلى هنا، أو اضغط عليها مباشرة.")});
-document.querySelectorAll(".seg button").forEach(b=>b.addEventListener("click",()=>{
-  document.querySelectorAll(".seg button").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));
-  L.level=b.dataset.level;newLadder();
-}));
-$("#ladNew").addEventListener("click",newLadder);
-$("#ladHint").addEventListener("click",()=>{
-  if(L.done)return;
-  if(L.phase==="quot"){
-    const P=L.pend;
-    say(ladFb,P.p===2?"القسمة على ٢ تعني إيجاد نصف "+ar(P.c)+".":"فكّر: أي عدد إذا ضربناه في "+ar(P.p)+" كان الناتج "+ar(P.c)+"؟");
-    return;
-  }
-  const s=spf(L.cur),t=tray.querySelector('[data-v="'+s+'"]');
-  t.classList.add("hint");setTimeout(()=>t.classList.remove("hint"),1800);
-  if(live())G.fromTo(t,{scale:1},{scale:1.15,yoyo:true,repeat:3,duration:.18,ease:"power1.inOut"});
-  say(ladFb,"جرّب الأعداد الأولية بالترتيب: ٢ ثم ٣ ثم ٥ ثم ٧. البطاقة المضيئة أصغر عدد أولي يقسم "+ar(L.cur)+".");
-});
 
 /* =========================================================
    Game 2: prime or not
@@ -981,7 +819,7 @@ function makeRow(v){
 function loadPV(n,opts){
   opts=opts||{};slips=0;
   Object.assign(PV,{n:n,K:String(n).length,cur:n,done:false,fromLadder:!!opts.prime,single:!!opts.prime,offOrder:false,buf:"",box:null,lit:[]});
-  pvRes.hidden=true;pvOpts.hidden=false;$("#pvBack").hidden=!PV.fromLadder;
+  pvRes.hidden=true;pvOpts.hidden=false;
   let head='<div class="lhead"><span><span class="slots">';
   for(let j=0;j<PV.K;j++)head+='<span style="color:'+PL_C[PV.K-1-j]+'">'+PL_NAME[PV.K-1-j].replace("ال","")+"</span>";
   ld.innerHTML=head+"</span></span><span>العامل الأولي</span></div>";
@@ -1109,7 +947,12 @@ function finishPV(){
 function newPV(){let n;do{n=pick(POOL0)}while(n===PV.last);PV.last=n;loadPV(n)}
 function genPV(){return [pick(POOL0)]}
 $("#pvNew").addEventListener("click",newPV);
-$("#pvBack").addEventListener("click",()=>openTab("p-ladder"));
+document.addEventListener("keydown",e=>{
+  if(PV.done||$("#p-place").hidden||(e.target.closest&&e.target.closest("input")))return;
+  const ai="٠١٢٣٤٥٦٧٨٩".indexOf(e.key);
+  const k=/^[0-9]$/.test(e.key)?e.key:ai>=0?String(ai):null;
+  if(k==null)return;pvKey(k);e.preventDefault();
+});
 
 /* ---------- Ulam spiral background ---------- */
 (function(){
@@ -1181,7 +1024,7 @@ setWho();
 /* ---------- start ---------- */
 updLevel();
 if(!studentName)openWelcome();
-newLadder();newSort();newFill();newRev();newScale();
+newSort();newFill();newRev();newScale();
 newPV();
 if(live()){
   G.timeline()
