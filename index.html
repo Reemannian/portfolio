@@ -457,7 +457,7 @@ html.lenis,html.lenis body{height:auto}
         <div class="info">
           <span class="label" data-k="pfL">Learning game · Upper primary</span>
           <h3 data-k="pfT">Prime Factorisation<span class="alt" lang="ar">التحليل إلى العوامل الأولية</span></h3>
-          <p data-k="pfP">Two ways to break a number into primes: a division ladder worked digit by digit, with the remainder carried beside the next digit, and a factor tree where every prime grows into fruit. An ant walks down the ladder with the child.</p>
+          <p data-k="pfP">Two ways to break a number into primes: a repeated-division ladder, and a factor tree where every prime grows into fruit. An ant walks down the ladder with the child.</p>
           <dl class="meta"><dt data-k="covers">Covers</dt><dd data-k="pfC">Prime numbers, repeated division, factor trees, numbers to 200</dd><dt data-k="acts">Activities</dt><dd data-k="pfA">Repeated division, factor tree, prime or not, fill the ladder, hidden number, factor balance</dd></dl>
           <button class="more" type="button" data-open="primes"><span data-k="tryIt">Try it</span> <span class="arr">→</span></button>
         </div>
@@ -579,7 +579,7 @@ const AR={
   asL:'لعبة تعليمية · الصف الأول',asT:'مغامرة الجمع والطرح<span class="alt" lang="en">Addition and Subtraction Adventure</span>',
   asP:'ست ألعاب للجمع والطرح ضمن 18، كل واحدة مبنية على محسوس: إطار العشرة، قطار العدّ التصاعدي، ضفدع يقفز على خط الأعداد، تفاح يُقطف، ميزان، ووحش أعداد جائع.',
   pfL:'لعبة تعليمية · المرحلة الابتدائية العليا',pfT:'التحليل إلى العوامل الأولية<span class="alt" lang="en">Prime Factorisation</span>',
-  pfP:'طريقتان لتحليل العدد إلى عوامله الأولية: سُلَّم القسمة المتكررة خانة خانة، مع نقل الباقي بجانب الرقم التالي، وشجرة العوامل التي يصبح فيها كل عدد أولي ثمرة. ونملة تنزل السُّلَّم مع الطالب.',
+  pfP:'طريقتان لتحليل العدد إلى عوامله الأولية: سُلَّم القسمة المتكررة، وشجرة العوامل التي يصبح فيها كل عدد أولي ثمرة. ونملة تنزل السُّلَّم مع الطالب.',
   pfC:'الأعداد الأولية، القسمة المتكررة، شجرة العوامل، الأعداد حتى ٢٠٠',pfA:'القسمة المتكررة، شجرة العوامل، أولي أم غير أولي، أكمل السُّلَّم، العدد المخفي، ميزان العوامل',
   asC:'الجمع والطرح ضمن 18',asA:'إكمال العشرة، العدّ التصاعدي، خط الأعداد، الطرح بالإزالة، العدد الناقص، أزواج الأعداد',
   baL:'وحدة تعلّم إلكتروني',baT:'The Balancing Act<span class="alt" lang="ar">لعبة التوازن</span>',
@@ -616,8 +616,8 @@ const W={
     en:{label:'Learning game · Grade 1',title:'Addition and Subtraction Adventure',text:'Six games on adding and subtracting within 18, in Arabic with Eastern Arabic numerals.',list:['Make ten and count on: ten-frames and a counting train, always starting from the bigger number.','Hop, pick and take away: a frog on the number line and apples off a tree.','Balance and feed: find the missing number on a scale, and feed the monster two numbers that make its target.']},
     ar:{label:'لعبة تعليمية · الصف الأول',title:'مغامرة الجمع والطرح',text:'ست ألعاب للجمع والطرح ضمن ١٨ بالأرقام العربية الهندية.',list:['كمّل العشرة والعدّ التصاعدي: إطار العشرة وقطار العدّ، بالبدء دائمًا من العدد الأكبر.','اقفز واقطف واطرح: ضفدع على خط الأعداد وتفاح يُقطف من الشجرة.','وازن وأطعم: جد العدد الناقص على الميزان، وأطعم الوحش عددين يكوّنان العدد المطلوب.']}},
   primes:{href:'prime-factorization/',phone:true,tint:'#FBE8C8',
-    en:{label:'Learning game · Upper primary',title:'Prime Factorisation',text:'Six games on breaking numbers into primes, in Arabic with Eastern Arabic numerals.',list:['Repeated division: divide digit by digit and carry the remainder beside the next digit.','Factor tree: type two factors, and every prime grows into fruit.','Practice: prime or not, fill the ladder, the hidden number and a factor balance.']},
-    ar:{label:'لعبة تعليمية · المرحلة الابتدائية العليا',title:'التحليل إلى العوامل الأولية',text:'ست ألعاب لتحليل العدد إلى عوامله الأولية بالأرقام العربية الهندية.',list:['القسمة المتكررة: يقسم خانة خانة وينقل الباقي بجانب الرقم التالي.','شجرة العوامل: يكتب عددين، وكل عدد أولي يصبح ثمرة.','تدريبات: أولي أم غير أولي، أكمل السُّلَّم، العدد المخفي، وميزان العوامل.']}},
+    en:{label:'Learning game · Upper primary',title:'Prime Factorisation',text:'Six games on breaking numbers into primes, in Arabic with Eastern Arabic numerals.',list:['Repeated division: divide by primes, step by step, until you reach 1.','Factor tree: type two factors, and every prime grows into fruit.','Practice: prime or not, fill the ladder, the hidden number and a factor balance.']},
+    ar:{label:'لعبة تعليمية · المرحلة الابتدائية العليا',title:'التحليل إلى العوامل الأولية',text:'ست ألعاب لتحليل العدد إلى عوامله الأولية بالأرقام العربية الهندية.',list:['القسمة المتكررة: يقسم على الأعداد الأولية حتى يصل إلى ١.','شجرة العوامل: يكتب عددين، وكل عدد أولي يصبح ثمرة.','تدريبات: أولي أم غير أولي، أكمل السُّلَّم، العدد المخفي، وميزان العوامل.']}},
   balance:{href:'balancing-act/',phone:false,tint:'#DDE7DF',
     en:{label:'E-learning module',title:'The Balancing Act',text:'An interactive module on two-step equations.',list:['Balance-scale explorer that keeps both sides level.','Graded practice with instant feedback.','A short knowledge check.']},
     ar:{label:'وحدة تعلّم إلكتروني',title:'The Balancing Act',text:'وحدة تفاعلية عن المعادلات ذات الخطوتين، باللغة الإنجليزية.',list:['مستكشف ميزان يُبقي الطرفين متّزنين.','تدريبات متدرّجة مع تغذية راجعة فورية.','اختبار قصير لقياس الفهم.']}},
