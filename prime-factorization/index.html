@@ -52,6 +52,8 @@ body{
 .lvl{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600}
 .lvl-bar{width:130px;height:10px;border-radius:5px;background:rgba(255,255,255,.18);overflow:hidden}
 .lvl-bar i{display:block;height:100%;width:0;background:var(--sun);border-radius:5px;transition:width .6s}
+.snd.restart{font-size:18px;padding:5px 10px;min-width:38px}
+.snd.restart.sure{font-size:13px;padding:8px 10px;background:rgba(255,255,255,.18)}
 .snd{font:600 13px/1 var(--f-body);color:var(--on-band);background:transparent;border:1.5px solid rgba(255,255,255,.35);border-radius:8px;padding:8px 10px;cursor:pointer}
 .snd[aria-pressed="false"]{opacity:.6}
 .praise{color:var(--c1);margin-inline-end:4px}
@@ -285,6 +287,7 @@ button:focus-visible,.slot:focus-visible{outline:3px solid var(--rule);outline-o
         <div class="lvl"><span id="lvlName">مبتدئ</span><span class="lvl-bar"><i id="lvlFill"></i></span></div>
         <button class="snd" id="snd" aria-pressed="true">الصوت: يعمل</button>
         <button class="snd" id="who">الطالب: —</button>
+        <button class="snd restart" id="restart" title="ابدأ من جديد" aria-label="ابدأ من جديد">↻</button>
       </div>
     </div>
     <svg class="hero-ladder" viewBox="0 0 170 240" aria-hidden="true" font-family="Readex Pro, Tahoma, sans-serif" font-weight="600" font-size="30" text-anchor="middle">
@@ -301,8 +304,8 @@ button:focus-visible,.slot:focus-visible{outline:3px solid var(--rule);outline-o
 
   <div class="tabs-wrap">
     <div class="tabs" role="tablist" aria-label="ألعاب الدرس">
-      <button class="tab" role="tab" data-p="p-place" aria-selected="true" style="--c:var(--c1)"><i>÷</i>القسمة المتكررة</button>
-      <button class="tab" role="tab" data-p="p-tree" aria-selected="false" style="--c:var(--c3)"><i><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><rect x="10.4" y="13" width="3.2" height="9" rx="1.2" fill="currentColor"/><circle cx="12" cy="8" r="6" fill="currentColor"/><circle cx="7" cy="11.5" r="4.6" fill="currentColor"/><circle cx="17" cy="11.5" r="4.6" fill="currentColor"/><circle cx="9" cy="8" r="1.5" style="fill:var(--c1)"/><circle cx="15" cy="10" r="1.5" style="fill:var(--c1)"/><circle cx="11.5" cy="12.5" r="1.5" style="fill:var(--c5)"/></svg></i>شجرة العوامل</button>
+      <button class="tab" role="tab" data-p="p-tree" aria-selected="true" style="--c:var(--c3)"><i><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><rect x="10.4" y="13" width="3.2" height="9" rx="1.2" fill="currentColor"/><circle cx="12" cy="8" r="6" fill="currentColor"/><circle cx="7" cy="11.5" r="4.6" fill="currentColor"/><circle cx="17" cy="11.5" r="4.6" fill="currentColor"/><circle cx="9" cy="8" r="1.5" style="fill:var(--c1)"/><circle cx="15" cy="10" r="1.5" style="fill:var(--c1)"/><circle cx="11.5" cy="12.5" r="1.5" style="fill:var(--c5)"/></svg></i>شجرة العوامل</button>
+      <button class="tab" role="tab" data-p="p-place" aria-selected="false" style="--c:var(--c1)"><i>÷</i>القسمة المتكررة</button>
       <button class="tab" role="tab" data-p="p-sort" aria-selected="false" style="--c:var(--c2)"><i>≠</i>أولي أم غير أولي؟</button>
       <button class="tab" role="tab" data-p="p-fill" aria-selected="false" style="--c:var(--c4)"><i>؟</i>أكمل السُّلَّم</button>
       <button class="tab" role="tab" data-p="p-rev" aria-selected="false" style="--c:var(--c5)"><i>×</i>العدد المخفي</button>
@@ -311,7 +314,7 @@ button:focus-visible,.slot:focus-visible{outline:3px solid var(--rule);outline-o
   </div>
 
   <!-- 0. place-by-place division -->
-  <section class="panel" id="p-place" role="tabpanel">
+  <section class="panel" id="p-place" role="tabpanel" hidden>
     <div class="ptitle" style="--c:var(--c1)"><span class="sym">÷</span><div><h2>القسمة المتكررة</h2><p>نقسم العدد خانة خانة من الكبرى إلى الصغرى، والباقي ينتقل إلى الخانة الأصغر.</p></div></div>
     <div class="bar">
       <p>سُلَّم القسمة للأعداد الأكبر من جدول الضرب.</p>
@@ -331,7 +334,7 @@ button:focus-visible,.slot:focus-visible{outline:3px solid var(--rule);outline-o
   </section>
 
   <!-- factor tree -->
-  <section class="panel" id="p-tree" role="tabpanel" hidden>
+  <section class="panel" id="p-tree" role="tabpanel">
     <div class="ptitle" style="--c:var(--c3)"><span class="sym"><svg viewBox="0 0 24 24" width="32" height="32" aria-hidden="true"><rect x="10.4" y="13" width="3.2" height="9" rx="1.2" fill="currentColor"/><circle cx="12" cy="8" r="6" fill="currentColor"/><circle cx="7" cy="11.5" r="4.6" fill="currentColor"/><circle cx="17" cy="11.5" r="4.6" fill="currentColor"/><circle cx="9" cy="8" r="1.5" style="fill:var(--c1)"/><circle cx="15" cy="10" r="1.5" style="fill:var(--c1)"/><circle cx="11.5" cy="12.5" r="1.5" style="fill:var(--c5)"/></svg></span><div><h2>شجرة العوامل</h2><p>نكتب العدد حاصل ضرب عددين، وكل عدد أولي يصبح ثمرة.</p></div></div>
     <div class="bar">
       <p>حلّل العدد حتى تصبح كل أطراف الشجرة ثمارًا.</p>
@@ -1259,10 +1262,20 @@ $("#wForm").addEventListener("submit",e=>{
   if(!v){shake($("#wName"));$("#wName").placeholder="اكتب اسمك أولًا";return}
   studentName=v.slice(0,20);try{localStorage.setItem("sullam-name",studentName)}catch(_){}
   setWho();sfx.win();
-  const done=()=>{welcome.hidden=true;antRefresh();say(pvFb,"أهلًا يا "+esc(studentName)+"! نمنم جاهزة. على أي عدد أولي نقسم "+ar(PV.cur)+"؟")};
+  const done=()=>{welcome.hidden=true;antRefresh();say(trFb,"أهلًا يا "+esc(studentName)+"! نمنم جاهزة. لنحلّل العدد في أعلى الشجرة.")};
   if(live())G.to(welcome,{autoAlpha:0,duration:.35,onComplete:()=>{done();G.set(welcome,{clearProps:"opacity,visibility"})}});else done();
 });
 who.addEventListener("click",openWelcome);
+const restartBtn=$("#restart");let restartT=null;
+restartBtn.addEventListener("click",()=>{
+  if(!restartBtn.classList.contains("sure")){
+    restartBtn.classList.add("sure");restartBtn.textContent="ابدأ من جديد؟";
+    restartT=setTimeout(()=>{restartBtn.classList.remove("sure");restartBtn.textContent="↻"},3000);return;
+  }
+  clearTimeout(restartT);
+  try{localStorage.removeItem("sullam-name");localStorage.removeItem("sullam-score")}catch(e){}
+  location.reload();
+});
 setWho();
 
 /* ---------- start ---------- */
