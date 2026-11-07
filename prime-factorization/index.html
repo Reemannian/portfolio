@@ -741,13 +741,13 @@ function newRev(){
   shuffle([n].concat(shuffle(ds).slice(0,3))).forEach(v=>{
     const b=document.createElement("button");b.type="button";b.className="tile wide";b.textContent=ar(v);b.dataset.v=v;
     opts.appendChild(b);
-    draggable(b,{onDrop:(t,el,dx,dy)=>t.dataset.drop==="top"?choose(el,dx,dy):false,onTap:el=>choose(el,0,0)});
+    draggable(b,{onDrop:(t,el,dx,dy)=>t.dataset.drop==="top"?chooseRev(el,dx,dy):false,onTap:el=>chooseRev(el,0,0)});
   });
   T.from(revLad.children,{autoAlpha:0,y:-12,stagger:.06});
   T.from(opts.children,{autoAlpha:0,y:12,stagger:.05});
   say(revFb,"فكّر بالعكس: ابدأ من ١ في الأسفل واضرب في العوامل صعودًا.");
 }
-function choose(el,dx,dy){
+function chooseRev(el,dx,dy){
   if(R.done)return false;
   const v=+el.dataset.v;
   if(v!==R.n){
