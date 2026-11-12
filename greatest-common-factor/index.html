@@ -1131,7 +1131,7 @@ function roundDone(){
         <div class="groups">${Array.from({length:Math.min(right,12)},()=>`<div class="grp">${IC[S.scn.A].repeat(a/right)}${IC[S.scn.B].repeat(b/right)}</div>`).join("")}${right>12?`<div class="grp" style="align-items:center;font-weight:600;font-size:13px;max-width:none;padding:6px 10px">و ${ar(right-12)} مثلها</div>`:""}</div>
         <div class="per">${S.scn.each}: <span>${IC[S.scn.A]} × ${ar(a/right)}</span> و <span>${IC[S.scn.B]} × ${ar(b/right)}</span></div>
       </div>`}
-      <p class="note center">تحقّق: ${ar(a)} ÷ ${ar(right)} = ${ar(a/right)} و ${ar(b)} ÷ ${ar(right)} = ${ar(b/right)}، كلاهما بدون باقٍ.</p>
+      <p class="center" style="margin:0;font-weight:600">نعم، <b class="num" style="font-size:22px">${ar(right)}</b> هو أكبر عدد يقبل كلا العددين ${ar(a)} و ${ar(b)} القسمة عليه دون باقٍ.</p>
       <div class="actions"><button type="button" class="btn primary" id="nextRound">${last?"عرض الشهادة":"الجولة التالية"}</button></div>
     </div>`;
   T.fromTo("#rStars span",{scale:0,rotation:-90},{scale:1,rotation:0,stagger:.15,duration:.5,ease:"back.out(2.5)",delay:.2});
