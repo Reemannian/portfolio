@@ -237,12 +237,15 @@ h1,h2,h3{font-family:var(--f-display);font-weight:400;line-height:1.25;margin:0;
 .food svg{width:150px;height:150px}
 .food .cap{font-size:13px;color:var(--soft);text-align:center}
 .slice-line{stroke:#7a4b22;stroke-width:2;transition:opacity .6s}
-.merge .slice-line.in{opacity:0}
+.merge .slice-line.in{opacity:.55;stroke-width:1.4}
+.merge .slice-line.edge{stroke:#1b2a57;stroke-width:4.5}
 .choc{display:flex;width:100%;max-width:330px;height:54px;border-radius:8px;overflow:hidden;border:3px solid #4a2a14;background:#4a2a14}
 .choc i{flex:1;background:#efe3d6;border-radius:2px;margin-inline-start:3px;transition:margin .6s}
 .choc i:first-child{margin-inline-start:0}
 .choc i.on{background:linear-gradient(160deg,#9a5c33,#6b3b1d);box-shadow:inset 0 3px 0 rgba(255,255,255,.18)}
-.choc.merge i.in{margin-inline-start:0}
+.choc.merge i.cut{margin-inline-start:9px}
+.choc.merge{background:#f5f8fd;border-color:transparent}
+.choc.merge i{outline:2px solid #4a2a14}
 .fview{display:grid;grid-template-columns:auto 1fr;gap:12px 16px;align-items:center}
 .fbox{display:grid;gap:6px;justify-items:center}
 .fbox .pbox{min-width:84px;height:54px}
@@ -1246,14 +1249,14 @@ function fracShow(){
     <div class="ptitle"><span class="sym" style="--c:var(--c3)">=</span><div><h3>الكسران متكافئان</h3><p>شاهد: الجزء الملوّن هو نفسه في الرسمين.</p></div></div>
     <div style="display:grid;gap:16px">
       <div class="fview">${fracHTML(a,b,"mid")}${food(a,b,FOOD(b),"foodA")}${fracHTML(n,d,"mid")}${food(n,d,FOOD(b))}</div>
-      <p class="eqv" id="eqv">${g===2?"كل جزأين صغيرين يصبحان جزءًا واحدًا كبيرًا":`كل <b class="num">${ar(g)}</b> أجزاء صغيرة تصبح جزءًا واحدًا كبيرًا`}</p>
+      <p class="eqv" id="eqv">نجمع كل ${g===2?"قطعتين":pieces(g)} في مجموعة واحدة: ${pieces(b)} تصبح ${d===2?"مجموعتين":d<=10?ar(d)+" مجموعات":ar(d)+" مجموعة"}، والملوّن ${pieces(a)} = ${n===1?"مجموعة واحدة":n===2?"مجموعتان":n<=10?ar(n)+" مجموعات":ar(n)+" مجموعة"} من ${ar(d)}.</p>
       <div class="eq" style="justify-content:center">${fracHTML(a,b,"mid")}<span class="times">=</span>${fracHTML(n,d,"mid")}</div>
       <p class="note center">${fracHTML(n,d)} في أبسط صورة، لأنه لا يوجد عدد أكبر من ١ يقسم ${ar(n)} و ${ar(d)} معًا.</p>
       <div class="actions"><button type="button" class="btn primary" id="fDone">إنهاء الجولة</button></div>
     </div>`;
   const fa=$("#foodA");
-  if(FOOD(b)==="choc")fa.querySelectorAll(".choc i").forEach((c,i)=>{if(i%g!==0)c.classList.add("in")});
-  else fa.querySelectorAll(".slice-line").forEach(l=>{if(+l.dataset.i%g!==0)l.classList.add("in")});
+  if(FOOD(b)==="choc")fa.querySelectorAll(".choc i").forEach((c,i)=>{if(i>0&&i%g===0)c.classList.add("cut")});
+  else fa.querySelectorAll(".slice-line").forEach(l=>l.classList.add(+l.dataset.i%g===0?"edge":"in"));
   if(g===1)$("#eqv").textContent="";
   setTimeout(()=>(fa.querySelector(".choc")||fa.querySelector("svg")).classList.add("merge"),live()?900:0);
   T.from("#stage .fview > *",{y:10,autoAlpha:0,stagger:.08});
