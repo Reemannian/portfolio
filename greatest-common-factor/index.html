@@ -990,6 +990,7 @@ function commonList(a,b){const fb=factors(b).slice(),c=[];factors(a).forEach(p=>
 let MT=null;
 function stepMatch(){
   const [a,b]=S.pair;
+  if(!commonList(a,b).length)return stepNoCommon();
   MT={f:[factors(a),factors(b)],sel:null,pairs:0,lines:[]};
   const row=(r,n)=>`<div class="mrow"><div class="lbl">${ar(n)}</div><div class="mchips">${MT.f[r].map((p,i)=>`<button type="button" class="chip" style="--c:${FRUIT[p]}" data-r="${r}" data-i="${i}" aria-label="العامل ${ar(p)} من العدد ${ar(n)}">${ar(p)}</button>`).join('<span class="times">×</span>')}</div></div>`;
   $("#stage").innerHTML=`
@@ -1072,7 +1073,57 @@ function finishMatch(){
 /* =========================================================
    Step 4: the GCF
    ========================================================= */
+function stepNoCommon(){
+  const [a,b]=S.pair,fa=factors(a),fb=factors(b);
+  const row=n=>`<div class="mrow"><div class="lbl">${ar(n)}</div><div class="mchips">${chipsJoin(factors(n))}</div></div>`;
+  $("#stage").innerHTML=`
+    <div class="ptitle"><span class="sym" style="--c:var(--c5)">؟</span><div><h3>قارن العوامل</h3><p>انظر إلى عوامل العددين جيدًا.</p></div></div>
+    <div class="mrows">${row(a)}${row(b)}</div>
+    <p class="ask" style="margin-top:16px">هل يوجد عامل أولي يظهر في العددين معًا؟</p>
+    <div class="opts" id="ncOpts"><button type="button" class="tile yn" data-v="yes">نعم، يوجد</button><button type="button" class="tile yn" data-v="no">لا يوجد عامل مشترك</button></div>`;
+  T.from("#stage .mrow, #ncOpts .tile",{y:12,autoAlpha:0,stagger:.07});
+  const ua=[...new Set(fa)].map(ar).join(" و "),ub=[...new Set(fb)].map(ar).join(" و ");
+  $("#ncOpts").querySelectorAll(".tile").forEach(t=>t.addEventListener("click",()=>{
+    if(t.disabled)return;
+    if(t.dataset.v==="no"){t.classList.add("right");pop(t);$("#ncOpts").querySelectorAll(".tile").forEach(x=>x.disabled=true);
+      nam(`صحيح! عوامل ${ar(a)} هي ${ua} فقط، وعوامل ${ar(b)} هي ${ub} فقط، فلا يوجد عامل أولي مشترك.`,"ok");T.later(1.4,()=>goStep(S.step+1));return}
+    t.disabled=true;t.classList.add("no");shake(t);
+    nam(`انظر جيدًا: عوامل ${ar(a)} هي ${ua}، وعوامل ${ar(b)} هي ${ub}. هل يتكرر عدد منها في الصفين؟`,"bad");
+  }));
+  view($("#ncOpts"));
+  nam("قارن عوامل العددين: هل ترى العدد نفسه في الصفين؟");
+  S.hintFn=()=>`عوامل ${ar(a)}: ${ua}. عوامل ${ar(b)}: ${ub}. هل يوجد عدد مكرر؟`;
+}
+/* no common prime: discover that 1 is the only number dividing both */
+function stepOne(){
+  const [a,b]=S.pair,da=divisors(a),db=divisors(b);
+  const row=(n,ds,r)=>`<div class="mrow"><div class="lbl">${ar(n)}</div><div class="mchips">${ds.map(d=>`<button type="button" class="chip" style="--c:var(--c2)" data-r="${r}" data-v="${d}" aria-label="${ar(d)}">${ar(d)}</button>`).join("")}</div></div>`;
+  $("#stage").innerHTML=`
+    <div class="ptitle"><span class="sym" style="--c:var(--c4)">١</span><div><h3>اكتشف العامل المشترك الأكبر</h3><p>هذه كل الأعداد التي تقسم كل عدد بدون باقٍ.</p></div></div>
+    <p class="ask">اضغط على العدد الذي يظهر في الصفين معًا.</p>
+    <div class="mrows">${row(a,da,0)}${row(b,db,1)}</div>
+    <div id="oneRes"></div>`;
+  T.from("#stage .mrow",{y:12,autoAlpha:0,stagger:.08});
+  $("#stage .mrows").addEventListener("click",e=>{
+    const c=e.target.closest(".chip");if(!c||c.disabled||$("#oneRes").childElementCount)return;
+    const v=+c.dataset.v;
+    if(a%v===0&&b%v===0){
+      $("#stage").querySelectorAll('.chip[data-v="1"]').forEach(x=>{x.classList.add("hl");pop(x)});
+      $("#stage").querySelectorAll(".mrows .chip").forEach(x=>x.disabled=true);
+      $("#oneRes").innerHTML=`<div class="result"><div class="eq" style="justify-content:center"><span>ع.م.أ (${ar(a)} ، ${ar(b)}) =</span><b>١</b></div><p class="note center">العدد ١ يقسم كل الأعداد. وعندما لا يوجد عامل أولي مشترك، يكون العامل المشترك الأكبر هو ١.</p><div class="actions"><button type="button" class="btn primary" id="oneNext">إنهاء الجولة</button></div></div>`;
+      T.from("#oneRes .result",{y:12,autoAlpha:0});sfx.win();
+      nam("اكتشفت ذلك بنفسك! العدد الوحيد الذي يقسم العددين معًا هو ١.","ok");
+      $("#oneNext").addEventListener("click",roundDone);view($("#oneNext"));return;
+    }
+    c.disabled=true;shake(c);
+    nam(`${ar(v)} يقسم ${ar(a%v===0?a:b)}، لكنه لا يقسم ${ar(a%v===0?b:a)}. ابحث عن عدد موجود في الصفين.`,"bad");
+  });
+  view($("#stage .mrows"));
+  nam("أي عدد يظهر في الصفين معًا؟");
+  S.hintFn=()=>"ابحث في أول كل صف.";
+}
 function stepAnswer(){
+  if(!commonList(...S.pair).length)return stepOne();
   const [a,b]=S.pair,c=commonList(a,b);
   S.ans="";S.ansTries=0;
   const intro=c.length?`<p class="ask">العوامل في صندوق المشترك:</p><div class="eq" style="justify-content:center">${chipsJoin(c,"hl")}</div>`
