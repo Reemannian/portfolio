@@ -660,7 +660,7 @@ function analysisDone(n){
   res.innerHTML=`<div class="eq"><b>${ar(n)}</b><span class="times">=</span>${chipsJoin(f)}</div>
     <div class="actions"><button type="button" class="btn primary" id="nextBtn">${n===S.pair[0]?`التالي: تحليل ${ar(S.pair[1])}`:"التالي: العوامل المشتركة"}</button></div>`;
   $("#work").appendChild(res);
-  T.from(res.querySelectorAll(".chip"),{scale:0,y:-30,stagger:.16,duration:.45,ease:"back.out(2)"});
+  if(S.method==="tree"&&TR&&TR.done&&TR.n===n&&live())flyFruits(res,f);else T.from(res.querySelectorAll(".chip"),{scale:0,stagger:.12,duration:.4,ease:"back.out(2)"});
   burst(res);sfx.win();
   S.hintFn=()=>"اضغط زر التالي لنكمل.";
   $("#nextBtn").addEventListener("click",()=>goStep(S.step+1));
@@ -832,14 +832,25 @@ function autoClassify(){
   if(cv.length)m+=cv.join(" و ")+(cv.length>1?" غير أولية، سنحلّلها.":" غير أولي، سنحلّله.");
   if(m)nam(m,pv.length?"ok":"");
 }
+/* each prime fruit leaves the tree and lines up in the factorization */
+function flyFruits(res,f){
+  const chips=[...res.querySelectorAll(".eq .chip")];
+  const pool=TR.nodes.filter(nd=>nd.state==="prime").map(nd=>({v:nd.v,el:nd.g.querySelector(".fr")}));
+  chips.forEach((c,i)=>{
+    const k=pool.findIndex(p=>p.v===f[i]);if(k<0)return;
+    const fr=pool.splice(k,1)[0].el,r1=fr.getBoundingClientRect(),r2=c.getBoundingClientRect();
+    G.fromTo(c,{x:r1.left+r1.width/2-(r2.left+r2.width/2),y:r1.top+r1.height/2-(r2.top+r2.height/2),scale:1.2},{x:0,y:0,scale:1,duration:.8,ease:"power2.inOut",delay:.2+i*.22});
+    G.to(fr,{opacity:.3,duration:.3,delay:.2+i*.22});
+  });
+}
 function askFinal(){
   /* every branch ends in a prime: harvest the fruit straight into the factorization */
   setCur(null);$("#trIn").hidden=true;$("#trOpts").hidden=true;TR.done=true;
-  $("#trAsk").innerHTML="كل أطراف الشجرة ثمار أولية. هيا نقطفها!";
-  nam("قطفنا كل الثمار الأولية: حاصل ضربها يساوي "+ar(TR.n)+".","ok");
+  $("#trAsk").innerHTML="كل أطراف الشجرة ثمار أولية. شاهد الثمار وهي تصطف أمامك!";
+  nam("نضجت الثمار الأولية، وها هي تنزل وتصطف: حاصل ضربها يساوي "+ar(TR.n)+".","ok");
   const frs=[...document.querySelectorAll("#trNd .fr")];
-  if(live())G.fromTo(frs,{y:0},{y:-16,yoyo:true,repeat:1,stagger:.14,duration:.2,ease:"power1.out"});
-  T.later(.35+frs.length*.14,()=>analysisDone(TR.n));
+  if(live())G.fromTo(frs,{rotation:-8},{rotation:8,yoyo:true,repeat:3,duration:.14,transformOrigin:"50% 0%"});
+  T.later(.6,()=>analysisDone(TR.n));
 }
 
 /* =========================================================
