@@ -660,7 +660,7 @@ function analysisDone(n){
   res.innerHTML=`<div class="eq"><b>${ar(n)}</b><span class="times">=</span>${chipsJoin(f)}</div>
     <div class="actions"><button type="button" class="btn primary" id="nextBtn">${n===S.pair[0]?`التالي: تحليل ${ar(S.pair[1])}`:"التالي: العوامل المشتركة"}</button></div>`;
   $("#work").appendChild(res);
-  T.from(res.querySelectorAll(".chip"),{scale:0,stagger:.1,duration:.4,ease:"back.out(2)"});
+  T.from(res.querySelectorAll(".chip"),{scale:0,y:-30,stagger:.16,duration:.45,ease:"back.out(2)"});
   burst(res);sfx.win();
   S.hintFn=()=>"اضغط زر التالي لنكمل.";
   $("#nextBtn").addEventListener("click",()=>goStep(S.step+1));
@@ -833,20 +833,13 @@ function autoClassify(){
   if(m)nam(m,pv.length?"ok":"");
 }
 function askFinal(){
-  setCur(null);$("#trIn").hidden=true;
-  const f=factors(TR.n),key=a=>a.slice().sort((x,y)=>x-y).join(","),ck=key(f);
-  const items=[{label:times(f),val:true,cls:"w"}],seen=[ck];
-  const add=a=>{const k=key(a);if(seen.indexOf(k)<0&&a.length>1){seen.push(k);items.push({label:times(a.slice().sort((x,y)=>x-y)),val:false,cls:"w"})}};
-  add(TR.root.kids.map(k=>k.v));add([...new Set(f)]);add(f.concat([f[0]]));add(f.slice(1));
-  $("#trAsk").innerHTML="كل الأطراف ثمار. ما تحليل <b>"+ar(TR.n)+"</b> إلى العوامل الأولية؟";
-  S.hintFn=()=>"اجمع كل الثمار في الشجرة، ولا تنسَ الثمار المتكررة.";
-  offerTo(shuffle(items.slice(0,4)),ok=>{
-    if(!ok){nam("اجمع كل الثمار في الشجرة، ولا تنسَ الثمار المتكررة.","bad");return false}
-    TR.done=true;$("#trAsk").innerHTML="";$("#trOpts").hidden=true;
-    nam("قطفنا كل الثمار: حاصل ضربها يساوي "+ar(TR.n)+".","ok");
-    if(live())G.fromTo("#trNd .fr",{y:0},{y:-10,yoyo:true,repeat:1,stagger:.1,duration:.2});
-    analysisDone(TR.n);return true;
-  });
+  /* every branch ends in a prime: harvest the fruit straight into the factorization */
+  setCur(null);$("#trIn").hidden=true;$("#trOpts").hidden=true;TR.done=true;
+  $("#trAsk").innerHTML="كل أطراف الشجرة ثمار أولية. هيا نقطفها!";
+  nam("قطفنا كل الثمار الأولية: حاصل ضربها يساوي "+ar(TR.n)+".","ok");
+  const frs=[...document.querySelectorAll("#trNd .fr")];
+  if(live())G.fromTo(frs,{y:0},{y:-16,yoyo:true,repeat:1,stagger:.14,duration:.2,ease:"power1.out"});
+  T.later(.35+frs.length*.14,()=>analysisDone(TR.n));
 }
 
 /* =========================================================
