@@ -990,18 +990,24 @@ function commonList(a,b){const fb=factors(b).slice(),c=[];factors(a).forEach(p=>
 let MT=null;
 function stepMatch(){
   const [a,b]=S.pair;
-  if(!commonList(a,b).length)return stepNoCommon();
   MT={f:[factors(a),factors(b)],sel:null,pairs:0,lines:[]};
   const row=(r,n)=>`<div class="mrow"><div class="lbl">${ar(n)}</div><div class="mchips">${MT.f[r].map((p,i)=>`<button type="button" class="chip" style="--c:${FRUIT[p]}" data-r="${r}" data-i="${i}" aria-label="العامل ${ar(p)} من العدد ${ar(n)}">${ar(p)}</button>`).join('<span class="times">×</span>')}</div></div>`;
   $("#stage").innerHTML=`
     <div class="ptitle"><span class="sym" style="--c:var(--c5)"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M4 20l4-1 11-11-3-3L5 16z"/><path d="M14 6l3 3"/></svg></span><div><h3>ظلّل العوامل المشتركة</h3><p>ضع إصبعك على عامل، واسحب كأنك تمسك قلم تظليل حتى تصل إلى العامل المساوي له في العدد الآخر.</p></div></div>
     <div class="mrows">${row(0,a)}${row(1,b)}<svg class="ink" id="ink" aria-hidden="true"></svg></div><div class="cbox" id="cbox" style="margin-top:12px"><span class="cbox-lbl">صندوق العوامل المشتركة</span><div class="cbox-in" id="cboxIn"><span class="ph">ظلّل كل عاملين متساويين بسحبة واحدة، فيظهران هنا.</span></div></div>
-    <div class="actions" style="margin-top:16px"><button type="button" class="btn" id="doneMatch">انتهيت</button></div>`;
+    <div class="actions" style="margin-top:16px"><button type="button" class="btn" id="noneMatch">لا يوجد ما أظلّله</button><button type="button" class="btn primary" id="doneMatch">انتهيت من التظليل</button></div>`;
   $("#stage").querySelector(".mrows").addEventListener("click",e=>{if(MT.dragged)return;const c=e.target.closest(".mchips .chip");if(c&&!c.classList.contains("hl"))tapChip(+c.dataset.r,+c.dataset.i,c)});
   enableDrag();
   $("#doneMatch").addEventListener("click",finishMatch);
+  $("#noneMatch").addEventListener("click",()=>{
+    const c=commonList(a,b);
+    if(!c.length){sfx.ok();nam(`صحيح! لا يوجد عدد يتكرر في الصفين، فلا يوجد عامل أولي مشترك بين ${ar(a)} و ${ar(b)}.`,"ok");$("#noneMatch").disabled=true;T.later(1.4,()=>goStep(S.step+1));return}
+    shake($("#noneMatch"));
+    nam(MT.pairs?"ما زال هناك عامل مشترك لم تظلّله. انظر جيدًا إلى الصفين.":`انظر جيدًا: العدد ${ar(c[0])} يظهر في الصفين. ظلّله.`,"bad");
+  });
   T.from("#stage .mrow",{y:14,autoAlpha:0,stagger:.08});setTimeout(()=>view($("#doneMatch")),450);
   nam("اسحب قلم التظليل من عامل إلى العامل المساوي له في العدد الآخر. يمكنك أيضًا الضغط على العاملين.");
+  if(!commonList(a,b).length){S.hintFn=()=>"قارن الصفين: هل ترى العدد نفسه فيهما؟ إذا لم تجده، اضغط «لا يوجد ما أظلّله».";return}
   S.hintFn=()=>{const usedA=[...document.querySelectorAll('.chip.hl[data-r="0"]')].map(c=>+c.dataset.i);const fb=MT.f[1].filter((_,j)=>!document.querySelector(`.chip.hl[data-r="1"][data-i="${j}"]`));const i=MT.f[0].findIndex((p,k)=>usedA.indexOf(k)<0&&fb.indexOf(p)>-1);return i<0?"وجدت كل العوامل المشتركة. اضغط «انتهيت».":"ابحث عن "+ar(MT.f[0][i])+" في الصفين."};
 }
 function centerOf(el){const r=el.getBoundingClientRect(),o=$("#stage .mrows").getBoundingClientRect();return [r.left+r.width/2-o.left,r.top+r.height/2-o.top]}
@@ -1066,6 +1072,7 @@ function tapChip(r,i,el){
 }
 function finishMatch(){
   const need=commonList(...S.pair).length;
+  if(need===0){shake($("#doneMatch"));nam("لم تظلّل أي عامل. إذا لم تجد عددًا يتكرر في الصفين، اضغط «لا يوجد ما أظلّله».","tip");return}
   if(MT.pairs<need){shake($("#doneMatch"));nam("ما زال هناك عامل مشترك لم تجده. انظر إلى العددين مرة أخرى.","bad");return}
   goStep(S.step+1);
 }
