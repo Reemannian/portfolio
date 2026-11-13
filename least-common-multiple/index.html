@@ -1126,7 +1126,9 @@ function tapChip(r,i,el){
     MT.lines.push([other,el]);drawInk(true);
     const ph=$("#cboxIn .ph");if(ph)ph.remove();
     $("#cboxIn").insertAdjacentHTML("beforeend",(MT.pairs>1?'<span class="times">×</span>':"")+chip(v1,"hl"));
-    T.from($("#cboxIn").lastElementChild,{scale:0,y:-20,duration:.45,ease:"back.out(2)"});
+    /* the highlighted factor drops into the box by itself, like picked fruit */
+    const nc=$("#cboxIn").lastElementChild;
+    if(live()){const r1=el.getBoundingClientRect(),r2=nc.getBoundingClientRect();G.fromTo(nc,{x:r1.left-r2.left,y:r1.top-r2.top,scale:1.25},{x:0,y:0,scale:1,duration:.75,ease:"power2.inOut",delay:.15})}
     nam(ar(v1)+" عامل مشترك بين العددين.","ok");
   }else{
     shake([other,el]);nam(ar(v1)+" لا يساوي "+ar(v2)+". اختر عاملين متساويين.","bad");
@@ -1148,23 +1150,29 @@ function unionOf(a,b){const c=commonList(a,b);return {c,ra:minus(factors(a),c),r
 function stepAnswer(){
   const [a,b]=S.pair,{c,ra,rb}=unionOf(a,b),all=c.concat(ra,rb);
   S.ans="";S.ansTries=0;
-  const part=(lbl,f,cls)=>`<div class="recap-row"><span class="ulbl">${lbl}</span>${f.length?chipsJoin(f,cls):'<span class="note">لا يوجد</span>'}</div>`;
+  const row=(n,r)=>{const left=c.slice();return `<div class="mrow"><div class="lbl">${ar(n)}</div><div class="mchips">${factors(n).map(p=>{const i=left.indexOf(p),h=i>-1;if(h)left.splice(i,1);return `<span class="chip ${h?"hl":""}" style="--c:${FRUIT[p]}" data-r="${r}" data-h="${h?1:0}">${ar(p)}</span>`}).join('<span class="times">×</span>')}</div></div>`};
   $("#stage").innerHTML=`
-    <div class="ptitle"><span class="sym" style="--c:var(--c4)">×</span><div><h3>احسب المضاعف المشترك الأصغر</h3><p>نأخذ العوامل المشتركة مرة واحدة، ونضيف إليها العوامل الباقية من كل عدد.</p></div></div>
+    <div class="ptitle"><span class="sym" style="--c:var(--c4)">×</span><div><h3>احسب المضاعف المشترك الأصغر</h3><p>المشترك ينزل مرة واحدة، ثم تنزل كل العوامل الباقية من العددين.</p></div></div>
     <div class="answer">
-      <div class="recap" style="width:100%">
-        ${part("المشترك (مرة واحدة)",c,"hl")}
-        ${part("الباقي من "+ar(a),ra,"")}
-        ${part("الباقي من "+ar(b),rb,"")}
-      </div>
-      <div class="eq" style="justify-content:center"><span>م.م.أ =</span>${c.map(p=>chip(p,"hl")).concat(ra.concat(rb).map(p=>chip(p))).join('<span class="times">×</span>')}</div>
+      <div class="mrows" style="width:100%">${row(a,0)}${row(b,1)}</div>
+      <div class="cbox" style="width:100%"><span class="cbox-lbl">م.م.أ</span><div class="cbox-in" id="uLine">${c.map(p=>chip(p,"hl")).concat(ra.concat(rb).map(p=>chip(p))).join('<span class="times">×</span>')}</div></div>
       <div class="ans-eq"><span>م.م.أ (<span class="num">${ar(a)}</span> ، <span class="num">${ar(b)}</span>) =</span><div class="ans-box empty" id="ansBox" aria-live="polite">؟</div></div>
       <div class="pad" dir="ltr" id="ansPad" role="group" aria-label="لوحة الأرقام">${[1,2,3,4,5,6,7,8,9].map(d=>`<button type="button" class="key" data-k="${d}">${ar(d)}</button>`).join("")}<button type="button" class="key fn" data-k="del">حذف</button><button type="button" class="key" data-k="0">٠</button><button type="button" class="key go" data-k="ok">تحقّق</button></div>
     </div>`;
   $("#ansPad").addEventListener("click",e=>{const k=e.target.closest(".key");if(k)press(k.dataset.k)});
-  T.from("#stage .answer > *",{y:12,autoAlpha:0,stagger:.07});
+  /* sources: common from the first number, then what is left in each number; the second copy of a common factor stays behind */
+  const A=[...$("#stage").querySelectorAll('.mrows .chip[data-r="0"]')],B=[...$("#stage").querySelectorAll('.mrows .chip[data-r="1"]')];
+  const src=A.filter(x=>x.dataset.h==="1").concat(A.filter(x=>x.dataset.h==="0"),B.filter(x=>x.dataset.h==="0"));
+  const stay=B.filter(x=>x.dataset.h==="1");
+  const dest=[...$("#uLine").querySelectorAll(".chip")],seps=[...$("#uLine").querySelectorAll(".times")];
+  if(live()){
+    G.set(seps,{autoAlpha:0});G.to(stay,{opacity:.3,duration:.4,delay:.2});
+    dest.forEach((d,k)=>{const s0=src[k];if(!s0)return;const r1=s0.getBoundingClientRect(),r2=d.getBoundingClientRect(),t=.4+k*.35;
+      G.fromTo(d,{x:r1.left-r2.left,y:r1.top-r2.top,scale:1.2},{x:0,y:0,scale:1,duration:.7,ease:"power2.inOut",delay:t});
+      G.to(s0,{opacity:.3,duration:.3,delay:t});if(seps[k-1])G.to(seps[k-1],{autoAlpha:1,duration:.2,delay:t+.5});});
+  }else{stay.forEach(x=>x.style.opacity=.3);src.forEach(x=>x.style.opacity=.3)}
   view($("#ansPad"));
-  nam(c.length?"اضرب كل العوامل في السطر: المشترك مرة واحدة، ثم الباقي.":"لا يوجد عامل مشترك، فنضرب كل عوامل العددين.");
+  nam(c.length?"شاهد: العامل المشترك ينزل مرة واحدة، ثم تنزل العوامل الباقية. اضرب ما في السطر.":"لا يوجد عامل مشترك، فتنزل كل العوامل. اضرب ما في السطر.");
   S.hintFn=()=>times(all)+" = ؟";
 }
 function press(k){

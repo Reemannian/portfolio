@@ -1067,7 +1067,9 @@ function tapChip(r,i,el){
     MT.lines.push([other,el]);drawInk(true);
     const ph=$("#cboxIn .ph");if(ph)ph.remove();
     $("#cboxIn").insertAdjacentHTML("beforeend",(MT.pairs>1?'<span class="times">×</span>':"")+chip(v1,"hl"));
-    T.from($("#cboxIn").lastElementChild,{scale:0,y:-20,duration:.45,ease:"back.out(2)"});
+    /* the highlighted factor drops into the box by itself, like picked fruit */
+    const nc=$("#cboxIn").lastElementChild;
+    if(live()){const r1=el.getBoundingClientRect(),r2=nc.getBoundingClientRect();G.fromTo(nc,{x:r1.left-r2.left,y:r1.top-r2.top,scale:1.25},{x:0,y:0,scale:1,duration:.75,ease:"power2.inOut",delay:.15})}
     nam(ar(v1)+" عامل مشترك بين العددين.","ok");
   }else{
     shake([other,el]);nam(ar(v1)+" لا يساوي "+ar(v2)+". اختر عاملين متساويين.","bad");
