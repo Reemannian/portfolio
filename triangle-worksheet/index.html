@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ورقة عمل: المثلث</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lalezar&family=Readex+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Same squared-notebook series as أ. ريم's games (red margin rule, navy band).
+   Colour roles match the triangle-area deck: القاعدة red, الارتفاع blue, المساحة yellow. */
+:root{
+  --paper:#f5f8fd; --grid:#dde5f4; --ink:#1b2a57; --soft:#56628c; --rule:#dc5048;
+  --mark:#ffe14a; --tile:#fff; --edge:#b7c3e2; --line:#c5cfe9;
+  --ok:#14774f; --ok-bg:#dff3e8; --bad:#ae2f28; --bad-bg:#fbe4e1; --tip-bg:#fff6cc; --tip:#6b5200;
+  --band:#22307c; --sun:#ffd84a;
+  --base:#e2553a; --height:#2867d6; --tri:#fff3b8; --tri-edge:#1b2a57;
+  --c3:#169a68; --c4:#7d4ad6; --c5:#d98d0b; --c6:#d03a72;
+  --f-display:"Lalezar","Readex Pro",Tahoma,sans-serif;
+  --f-body:"Readex Pro","Segoe UI",Tahoma,sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background-color:var(--paper);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.6;
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:26px 26px}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+[hidden]{display:none!important}
+:focus-visible{outline:3px solid var(--rule);outline-offset:3px}
+.app{position:relative;max-width:780px;margin:0 auto;padding:0 16px 150px}
+.app::before{content:"";position:absolute;top:0;bottom:0;right:6px;width:2px;background:var(--rule);opacity:.5;pointer-events:none}
+h1,h2,h3{font-family:var(--f-display);font-weight:400;line-height:1.25;margin:0;text-wrap:balance}
+
+/* ---------- band ---------- */
+.hero{position:relative;overflow:hidden;background:var(--band);color:#fff;border-radius:0 0 22px 22px;padding:18px 20px 18px;margin:0 -16px 18px}
+.fsym{position:absolute;font-family:var(--f-display);color:#fff;opacity:.12;pointer-events:none;line-height:1;user-select:none}
+.hero-in{position:relative;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}
+.kicker{margin:0;font-size:13px;opacity:.8}
+.hero h1{font-size:clamp(28px,6vw,40px)}
+.hero h1 span{color:var(--sun)}
+.hud{display:flex;align-items:center;gap:8px}
+.pill{display:inline-flex;align-items:center;gap:8px;font:600 14px/1 var(--f-body);color:#fff;background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.3);border-radius:999px;padding:6px 14px 6px 6px;min-height:40px}
+.pill .av{width:28px;height:28px;border-radius:50%;background:#fff;color:var(--band);display:grid;place-items:center;font-family:var(--f-display);font-size:17px}
+.ibtn{width:40px;height:40px;border-radius:50%;border:1.5px solid rgba(255,255,255,.3);background:transparent;color:#fff;display:grid;place-items:center}
+.ibtn svg{width:20px;height:20px}
+.ibtn[aria-pressed="false"]{opacity:.55}
+
+/* ---------- progress strip ---------- */
+.strip{position:sticky;top:0;z-index:15;margin:0 -16px 18px;padding:10px 16px;background:rgba(245,248,253,.94);backdrop-filter:blur(6px);border-bottom:1.5px solid var(--line);display:flex;align-items:center;gap:12px}
+.strip .lbl{font-size:14px;color:var(--soft);white-space:nowrap}
+.strip .lbl b{font-family:var(--f-display);font-weight:400;font-size:20px;color:var(--ink)}
+.track{flex:1;display:flex;gap:4px}
+.track a{flex:1;height:10px;border-radius:5px;background:var(--line);display:block}
+.track a.done{background:var(--ink)}
+.track a.ok{background:var(--c3)}
+.track a.bad{background:var(--bad)}
+
+/* ---------- sections + question cards ---------- */
+.intro{margin:0 0 22px;font-size:17px}
+.sec{margin:34px 0 14px;display:flex;align-items:baseline;gap:10px}
+.sec h2{font-size:26px}
+.sec .idx{font-family:var(--f-display);color:var(--rule);font-size:18px}
+.q{position:relative;background:var(--tile);border:1.5px solid var(--line);border-radius:18px;padding:18px 18px 16px;margin-bottom:16px;scroll-margin:84px 0 170px}
+.q.missing{border-color:var(--c5);box-shadow:0 0 0 3px #ffe7b3}
+.qh{display:flex;align-items:flex-start;gap:12px;margin-bottom:12px}
+.qn{width:40px;height:40px;flex:none;border-radius:12px;background:var(--ink);color:#fff;display:grid;place-items:center;font-family:var(--f-display);font-size:24px;line-height:1}
+.qt{flex:1;margin:0;font-size:18px;font-weight:600;line-height:1.55}
+.qt small{display:block;font-weight:400;font-size:14px;color:var(--soft)}
+.marks{flex:none;font-size:13px;color:var(--soft);border:1.5px solid var(--line);border-radius:999px;padding:3px 10px;white-space:nowrap}
+.q.graded .marks{font-weight:700}
+.q.right .marks{color:var(--ok);border-color:var(--ok);background:var(--ok-bg)}
+.q.wrong .marks{color:var(--bad);border-color:var(--bad);background:var(--bad-bg)}
+.q.half .marks{color:var(--tip);border-color:var(--c5);background:var(--tip-bg)}
+
+.fig{display:block;width:100%;max-width:340px;margin:0 auto 6px;overflow:visible}
+.fig .face{fill:var(--tri);stroke:var(--tri-edge);stroke-width:3;stroke-linejoin:round}
+.fig .arc{fill:none;stroke:var(--tri-edge);stroke-width:1.8}
+.fig .tick{stroke:var(--tri-edge);stroke-width:2.6;stroke-linecap:round}
+.fig .vl{font:400 22px var(--f-display);fill:var(--ink)}
+.fig .al{font:600 15px var(--f-body);fill:var(--ink)}
+.fig .al.unk{font:400 22px var(--f-display);fill:var(--rule)}
+.fig .bl{font:600 15px var(--f-body);fill:var(--base)}
+.fig .hl{font:600 15px var(--f-body);fill:var(--height)}
+.fig .sl{font:600 15px var(--f-body);fill:var(--soft)}
+.fig .basel{stroke:var(--base);stroke-width:4;stroke-linecap:round}
+.fig .hgt{stroke:var(--height);stroke-width:2.6;stroke-dasharray:7 5}
+.fig .sq{fill:none;stroke:var(--height);stroke-width:1.8}
+.fig .sqk{fill:none;stroke:var(--tri-edge);stroke-width:1.8}
+
+/* answer controls */
+.ansrow{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px 14px;margin-top:10px}
+.ansrow label{font-weight:600}
+.box{display:inline-flex;align-items:center;gap:4px;direction:ltr}
+.box input{width:84px;padding:8px 10px;border:2px solid var(--edge);border-radius:12px;background:#fff;text-align:center;font-family:var(--f-display);font-size:26px;line-height:1.2;color:var(--ink)}
+.box input:focus{border-color:var(--ink);outline:none}
+.box .u{font-weight:600;color:var(--soft);font-size:16px}
+.box input:disabled{background:#f2f4fa}
+.box input.ok{border-color:var(--ok);background:var(--ok-bg)}
+.box input.bad{border-color:var(--bad);background:var(--bad-bg)}
+
+.sets{display:grid;gap:10px}
+.set{display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid var(--line);border-radius:14px}
+.set .nums{font-family:var(--f-display);font-size:24px;line-height:1.2}
+.set .nums small{font-family:var(--f-body);font-size:13px;color:var(--soft)}
+.sticks{display:grid;gap:4px;margin-top:6px}
+.sticks i{display:block;height:7px;border-radius:4px;background:var(--c4);opacity:.75}
+.seg{display:flex;border:2px solid var(--ink);border-radius:12px;overflow:hidden}
+.seg button{width:54px;height:44px;border:0;background:#fff;display:grid;place-items:center}
+.seg button+button{border-right:2px solid var(--ink)}
+.seg button svg{width:22px;height:22px}
+.seg button[aria-pressed="true"].y{background:var(--ink);color:#fff}
+.seg button[aria-pressed="true"].n{background:var(--ink);color:#fff}
+.set.ok{border-color:var(--ok);background:var(--ok-bg)}
+.set.bad{border-color:var(--bad);background:var(--bad-bg)}
+.set .why{grid-column:1/-1;font-size:14px;margin:0}
+
+.opts{display:flex;flex-wrap:wrap;justify-content:center;gap:10px}
+.opt{min-width:76px;padding:8px 14px;border:2px solid var(--edge);border-radius:14px;background:#fff;font-family:var(--f-display);font-size:26px;line-height:1.2}
+.opt small{font-family:var(--f-body);font-size:14px;color:var(--soft)}
+.opt[aria-checked="true"]{border-color:var(--ink);background:var(--ink);color:#fff}
+.opt[aria-checked="true"] small{color:#dfe5ff}
+.opt.ok{border-color:var(--ok)!important;background:var(--ok-bg)!important;color:var(--ok)!important}
+.opt.bad{border-color:var(--bad)!important;background:var(--bad-bg)!important;color:var(--bad)!important}
+.opt:disabled{cursor:default}
+
+.qfoot{display:flex;justify-content:flex-start;margin-top:12px}
+.tipbtn{border:1.5px solid var(--edge);background:transparent;border-radius:999px;padding:5px 12px;font-size:13px;font-weight:600;color:var(--soft);display:inline-flex;align-items:center;gap:6px}
+.tipbtn svg{width:16px;height:16px}
+
+.sol{margin-top:14px;border-radius:14px;padding:12px 14px;font-size:15px;line-height:1.8}
+.sol.ok{background:var(--ok-bg);color:#0d5236}
+.sol.bad{background:var(--bad-bg);color:#6e1b17}
+.sol b{font-weight:700}
+.sol .eq{display:block;font-family:var(--f-display);font-size:21px;color:var(--ink);line-height:1.6}
+
+/* ---------- grade bar + results ---------- */
+.gradebar{margin:30px 0 0;display:grid;gap:12px;justify-items:center;text-align:center}
+.btn{font:600 17px/1 var(--f-body);padding:15px 26px;border-radius:14px;border:2px solid var(--ink);background:transparent;color:var(--ink);display:inline-flex;align-items:center;gap:8px;justify-content:center}
+.btn.primary{background:var(--ink);color:#fff;box-shadow:0 4px 0 #0d1638}
+.btn.primary:active{transform:translateY(3px);box-shadow:0 1px 0 #0d1638}
+.btn svg{width:20px;height:20px}
+.notice{background:var(--tip-bg);color:var(--tip);border-radius:14px;padding:12px 16px;display:grid;gap:10px;justify-items:center;max-width:460px}
+.notice .row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.notice .btn{padding:10px 16px;font-size:15px}
+
+.cert{margin-top:30px;background:var(--tile);border:2px solid var(--ink);border-radius:20px;padding:28px 20px 22px;display:grid;gap:12px;text-align:center;position:relative;overflow:hidden}
+.cert::before{content:"";position:absolute;inset:8px;border:1.5px dashed var(--edge);border-radius:14px;pointer-events:none}
+.cert .who{font-size:15px;color:var(--soft);margin:0}
+.cert .student{font-family:var(--f-display);font-size:clamp(34px,9vw,50px);background:linear-gradient(transparent 60%,var(--mark) 60%);justify-self:center;padding:6px 10px 0;line-height:1.4}
+.score{font-family:var(--f-display);line-height:1;display:flex;align-items:baseline;justify-content:center;gap:8px;direction:rtl}
+.score .got{font-size:76px}
+.score .of{font-size:30px;color:var(--soft)}
+.stars{display:flex;justify-content:center;gap:8px}
+.stars svg{width:44px;height:44px}
+.stars .on{fill:var(--sun);stroke:#b98b00}
+.stars .off{fill:#e7ebf5;stroke:var(--line)}
+.cert .msg{font-size:18px;font-weight:600;margin:0}
+.chips{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin:4px 0}
+.chips a{min-width:74px;padding:6px 8px;border-radius:12px;text-decoration:none;font-weight:600;font-size:14px;color:var(--ink);border:1.5px solid var(--line);display:grid;justify-items:center;line-height:1.3}
+.chips a b{font-family:var(--f-display);font-weight:400;font-size:20px}
+.chips a.ok{background:var(--ok-bg);border-color:var(--ok);color:var(--ok)}
+.chips a.bad{background:var(--bad-bg);border-color:var(--bad);color:var(--bad)}
+.chips a.half{background:var(--tip-bg);border-color:var(--c5);color:var(--tip)}
+.cert .acts{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:6px}
+
+.foot{text-align:center;color:var(--soft);font-size:14px;margin-top:40px}
+
+/* ---------- helper (Sana the kite) ---------- */
+.helper{position:fixed;left:0;right:0;bottom:0;z-index:20;padding:0 12px 12px;pointer-events:none}
+.helper-in{pointer-events:auto;max-width:748px;margin:0 auto;display:flex;align-items:flex-end;gap:8px}
+.helper .kitew{width:70px;flex:none}
+.bubble{flex:1;position:relative;background:var(--tile);border:2px solid var(--ink);border-radius:18px;padding:10px 14px;min-height:50px;display:flex;align-items:center;box-shadow:0 8px 24px rgba(27,42,87,.16);font-size:15px;line-height:1.6}
+.bubble::after{content:"";position:absolute;bottom:14px;right:-10px;width:16px;height:16px;background:inherit;border-right:2px solid var(--ink);border-bottom:2px solid var(--ink);transform:rotate(-45deg)}
+.bubble.ok{background:var(--ok-bg);color:#0d5236}
+.bubble.bad{background:var(--bad-bg);color:#7e1f1a}
+.bubble.tip{background:var(--tip-bg);color:var(--tip)}
+.kite .sail-a{fill:#e2553a}.kite .sail-b{fill:#ffd84a}.kite .sail-c{fill:#2867d6}.kite .sail-d{fill:#169a68}
+.kite .spar{stroke:#1b2a57;stroke-width:2.2;fill:none;stroke-linecap:round}
+.kite .tail{stroke:#1b2a57;stroke-width:2;fill:none;stroke-linecap:round}
+.kite .bow{fill:#d03a72}
+
+/* ---------- welcome modal ---------- */
+.overlay{position:fixed;inset:0;z-index:50;background:rgba(17,26,60,.55);display:flex;align-items:flex-start;justify-content:center;padding:12vh 16px 16px;overflow-y:auto}
+.modal{width:100%;max-width:420px;background:var(--tile);border-radius:24px;padding:24px 22px 22px;display:grid;gap:14px;position:relative;box-shadow:0 24px 60px rgba(10,16,40,.35)}
+.modal .kitebig{width:96px;margin:-80px auto 0}
+.modal h2{font-size:28px;text-align:center}
+.modal p{margin:0;text-align:center;color:var(--soft)}
+.modal label{display:block;font-weight:600;margin-bottom:6px}
+.text-in{width:100%;padding:13px 16px;border:2px solid var(--edge);border-radius:12px;background:#fff;font-size:20px}
+.text-in:focus{border-color:var(--ink);outline:none}
+.text-in[aria-invalid="true"]{border-color:var(--bad)}
+.err{color:var(--bad);font-size:14px;margin:6px 0 0;min-height:1.3em}
+
+.spark{position:fixed;z-index:60;pointer-events:none;width:14px;height:14px;border-radius:3px}
+@media (max-width:520px){
+  .q{padding:16px 14px 14px}
+  .qt{font-size:17px}
+  .helper .kitew{width:56px}
+  .bubble{font-size:14px}
+  .set .nums{font-size:22px}
+  .seg button{width:48px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<!-- Sana: an original kite character (a kite is made of triangles) -->
+<template id="kiteTpl"><svg class="kite" viewBox="0 0 80 96" aria-hidden="true">
+<g class="kbody">
+<path class="sail-a" d="M40 4 L40 40 L10 34 Z"/><path class="sail-b" d="M40 4 L70 34 L40 40 Z"/>
+<path class="sail-c" d="M10 34 L40 40 L40 70 Z"/><path class="sail-d" d="M70 34 L40 70 L40 40 Z"/>
+<path class="spar" d="M40 4 L70 34 L40 70 L10 34 Z M40 4 L40 70 M10 34 L70 34"/>
+<circle cx="32" cy="27" r="5" fill="#fff"/><circle cx="33" cy="28" r="2.5" fill="#1b2a57"/>
+<circle cx="48" cy="27" r="5" fill="#fff"/><circle cx="49" cy="28" r="2.5" fill="#1b2a57"/>
+<path d="M33 45 Q40 52 47 45" stroke="#fff" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+<circle cx="26" cy="40" r="2.6" fill="#ff8fa3"/><circle cx="54" cy="40" r="2.6" fill="#ff8fa3"/>
+</g>
+<g class="ktail"><path class="tail" d="M40 70 Q30 78 40 84 Q50 90 42 95"/>
+<path class="bow" d="M33 77 l-6 -4 v8 z M33 77 l6 -4 v8 z"/><path class="bow" d="M44 88 l-6 -4 v8 z M44 88 l6 -4 v8 z"/></g>
+</svg></template>
+
+<template id="icoYes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5"/></svg></template>
+<template id="icoNo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></template>
+
+<div class="app">
+  <header class="hero" id="hero">
+    <span class="fsym" style="top:4px;left:42%;font-size:40px">△</span>
+    <span class="fsym" style="bottom:-6px;left:34%;font-size:34px">١٨٠°</span>
+    <span class="fsym" style="top:52px;left:62%;font-size:26px">½</span>
+    <span class="fsym" style="bottom:2px;left:4%;font-size:30px">∠</span>
+    <div class="hero-in">
+      <div>
+        <p class="kicker">رياضيات · الصف السادس</p>
+        <h1>ورقة عمل: <span>المثلث</span></h1>
+      </div>
+      <div class="hud">
+        <span class="pill" id="namePill" hidden><span class="av" id="nameAv">؟</span><span id="nameTxt"></span></span>
+        <button class="ibtn" id="soundBtn" type="button" aria-pressed="true" aria-label="الصوت">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="strip" id="strip">
+    <span class="lbl" id="stripLbl">أجبت عن <b>٠</b> من <b>٨</b></span>
+    <nav class="track" id="track" aria-label="الأسئلة"></nav>
+  </div>
+
+  <p class="intro">أجب عن الأسئلة كلها، ثم اضغط <b>«صحّح الورقة»</b> في الأسفل لتعرف درجتك وترى الحل.</p>
+
+  <main id="sheet"></main>
+
+  <div class="gradebar" id="gradebar">
+    <div class="notice" id="notice" hidden>
+      <span id="noticeTxt"></span>
+      <div class="row">
+        <button class="btn" type="button" id="goMissing">أكمل الإجابة</button>
+        <button class="btn" type="button" id="gradeAnyway">صحّح الآن</button>
+      </div>
+    </div>
+    <button class="btn primary" type="button" id="gradeBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5"/></svg>
+      صحّح الورقة
+    </button>
+  </div>
+
+  <section class="cert" id="cert" hidden aria-live="polite">
+    <p class="who">نتيجة ورقة العمل</p>
+    <div class="student" id="certName"></div>
+    <div class="score"><span class="got" id="scoreGot">٠</span><span class="of">من <span id="scoreOf">٢٠</span></span></div>
+    <div class="stars" id="stars"></div>
+    <p class="msg" id="certMsg"></p>
+    <div class="chips" id="chips"></div>
+    <div class="acts">
+      <button class="btn primary" type="button" id="againBtn">حاول مرة أخرى</button>
+      <button class="btn" type="button" id="newBtn">ورقة جديدة بأرقام أخرى</button>
+    </div>
+  </section>
+
+  <p class="foot">إعداد: أ. ريم</p>
+</div>
+
+<div class="helper" id="helper">
+  <div class="helper-in">
+    <div class="kitew" id="kiteSmall"></div>
+    <div class="bubble" id="bubble"><span id="bubbleTxt" aria-live="polite">أهلًا! أنا سنا، الطائرة الورقية.</span></div>
+  </div>
+</div>
+
+<div class="overlay" id="welcome">
+  <form class="modal" id="nameForm" novalidate>
+    <div class="kitebig" id="kiteBig"></div>
+    <h2>أهلًا بك!</h2>
+    <p>أنا سنا، وجسمي مصنوع من مثلثات. هيا نحلّ ورقة العمل معًا.</p>
+    <div>
+      <label for="nameIn">اكتب اسمك</label>
+      <input class="text-in" id="nameIn" autocomplete="off" maxlength="24">
+      <p class="err" id="nameErr" role="alert"></p>
+    </div>
+    <button class="btn primary" type="submit">لنبدأ</button>
+  </form>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script>
+"use strict";
+/* ================= helpers ================= */
+const G = window.gsap || null;
+let RM = !G || matchMedia("(prefers-reduced-motion: reduce)").matches;
+if (G) gsap.defaults({ ease: "power3.out", duration: .5 });
+const $ = (s, r = document) => r.querySelector(s);
+const el = (t, cls, html) => { const e = document.createElement(t); if (cls) e.className = cls; if (html != null) e.innerHTML = html; return e; };
+const HD = "٠١٢٣٤٥٦٧٨٩";
+const ar = n => String(n).replace(/[0-9]/g, d => HD[d]);
+const toLatin = s => String(s).replace(/[٠-٩]/g, d => HD.indexOf(d)).replace(/[۰-۹]/g, d => "۰۱۲۳۴۵۶۷۸۹".indexOf(d));
+const SVGNS = "http://www.w3.org/2000/svg";
+const sv = (t, a = {}, txt) => { const e = document.createElementNS(SVGNS, t); for (const k in a) e.setAttribute(k, a[k]); if (txt != null) e.textContent = txt; return e; };
+const deg = d => d * Math.PI / 180;
+const marksWord = n => n === 1 ? "درجة واحدة" : n === 2 ? "درجتان" : ar(n) + " درجات";
+const qWord = n => n === 1 ? "سؤال واحد" : n === 2 ? "سؤالان" : ar(n) + " أسئلة";
+
+/* ================= sound ================= */
+let soundOn = true, AC = null;
+function tone(fs, dur, type, vol) {
+  if (!soundOn) return;
+  try {
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    const t0 = AC.currentTime;
+    fs.forEach((f, i) => { const o = AC.createOscillator(), g = AC.createGain(); o.type = type || "sine"; o.frequency.value = f; const st = t0 + i * dur; g.gain.setValueAtTime(0, st); g.gain.linearRampToValueAtTime(vol || .14, st + .01); g.gain.exponentialRampToValueAtTime(.001, st + dur * 1.8); o.connect(g); g.connect(AC.destination); o.start(st); o.stop(st + dur * 2); });
+  } catch (e) {}
+}
+const sfx = { tap: () => tone([660], .05, "triangle", .07), ok: () => tone([523, 659, 784], .09), bad: () => tone([300, 240], .12, "sawtooth", .06), win: () => tone([523, 659, 784, 1047], .12) };
+$("#soundBtn").onclick = e => { soundOn = !soundOn; e.currentTarget.setAttribute("aria-pressed", soundOn); };
+
+/* ================= helper character ================= */
+const kTpl = $("#kiteTpl").content;
+$("#kiteSmall").appendChild(kTpl.cloneNode(true));
+$("#kiteBig").appendChild(kTpl.cloneNode(true));
+const kite = $("#kiteSmall svg");
+let student = "";
+function say(t, kind) {
+  const b = $("#bubble");
+  b.className = "bubble" + (kind ? " " + kind : "");
+  $("#bubbleTxt").textContent = t;
+  if (G && !RM) gsap.fromTo(b, { scale: .96 }, { scale: 1, duration: .35, ease: "back.out(2)" });
+}
+function hop() { if (G && !RM) gsap.fromTo(kite, { y: 0 }, { y: -16, duration: .2, yoyo: true, repeat: 1, ease: "power2.out" }); }
+function shake() { if (G && !RM) gsap.fromTo(kite, { rotation: 0 }, { keyframes: [{ rotation: -10 }, { rotation: 9 }, { rotation: -6 }, { rotation: 0 }], duration: .5, transformOrigin: "50% 40%" }); }
+if (G && !RM) gsap.to("#kiteSmall .ktail", { rotation: 6, transformOrigin: "50% 0%", duration: 1.4, yoyo: true, repeat: -1, ease: "sine.inOut" });
+
+/* scroll an element into view above the helper bubble, only if needed */
+function view(node) {
+  const r = node.getBoundingClientRect(), top = 70, bottom = innerHeight - 120;
+  if (r.top >= top && r.bottom <= bottom) return;
+  node.scrollIntoView({ behavior: RM ? "auto" : "smooth", block: "center" });
+}
+
+/* ================= question bank (hand-picked, checked in code) ================= */
+const BANK = {
+  sides: [
+    [[4, 4, 8], [5, 8, 10], [3, 6, 8], [6, 8, 16]],
+    [[6, 6, 9], [2, 5, 7], [3, 4, 9], [4, 7, 10]],
+    [[7, 8, 12], [5, 5, 10], [2, 9, 10], [4, 6, 11]]
+  ],
+  third: [
+    { a: 5, b: 9, opts: [3, 4, 10, 14] },
+    { a: 6, b: 10, opts: [4, 12, 16, 17] },
+    { a: 7, b: 3, opts: [2, 4, 8, 10] }
+  ],
+  angle: [{ x: 75, y: 45 }, { x: 70, y: 35 }, { x: 55, y: 80 }],
+  right: [38, 27, 44],
+  isoApex: [65, 72, 48],      // base angle given → find apex
+  isoBase: [100, 30, 64],     // apex given → find both base angles
+  area: [{ b: 12, h: 7 }, { b: 10, h: 9 }, { b: 16, h: 5 }],
+  area2: [{ b: 9, h: 8, s: 10 }, { b: 11, h: 6, s: 7 }, { b: 13, h: 4, s: 5 }]
+};
+const valid = t => { const s = [...t].sort((p, q) => p - q); return s[0] + s[1] > s[2]; };
+
+let V = 0;                 // current variant
+let Q = [];                // built questions
+let graded = false;
+
+function buildQuestions(v) {
+  const sets = BANK.sides[v], th = BANK.third[v], an = BANK.angle[v], rt = BANK.right[v],
+    ia = BANK.isoApex[v], ib = BANK.isoBase[v], a1 = BANK.area[v], a2 = BANK.area2[v];
+  return [
+    { id: 1, sec: 0, kind: "sides", marks: 4, sets, title: "أيّ الأطوال التالية تصلح لتكوين مثلث؟", sub: "اختر ✓ إذا كانت تصلح، و ✗ إذا كانت لا تصلح.",
+      hint: "اجمع الطولين الأصغرين وقارن المجموع بالطول الأكبر: إذا كان المجموع أكبر منه فهي تصلح." },
+    { id: 2, sec: 0, kind: "third", marks: 2, th, ans: th.opts.filter(o => o > Math.abs(th.a - th.b) && o < th.a + th.b),
+      title: `مثلث طولا ضلعين فيه ${ar(th.a)} سم و ${ar(th.b)} سم. أيّ الأطوال التالية يصلح أن يكون طول الضلع الثالث؟`,
+      hint: "الضلع الثالث يجب أن يكون أكبر من الفرق بين الضلعين، وأصغر من مجموعهما." },
+    { id: 3, sec: 1, kind: "angle", marks: 2, an, ans: 180 - an.x - an.y,
+      title: "جد م∠ن", sub: "تأمّل الزاويتين المعلومتين في الرسم.",
+      hint: "مجموع قياسات زوايا المثلث ١٨٠°. اجمع الزاويتين المعلومتين ثم اطرح الناتج من ١٨٠." },
+    { id: 4, sec: 1, kind: "right", marks: 2, rt, ans: 90 - rt,
+      title: "في المثلث القائم أ ب جـ، جد م∠جـ", sub: "الزاوية ب قائمة.",
+      hint: "الزاوية القائمة قياسها ٩٠°. اجمع ٩٠ مع الزاوية المعلومة ثم اطرح من ١٨٠." },
+    { id: 5, sec: 2, kind: "isoApex", marks: 2, ia, ans: 180 - 2 * ia,
+      title: "المثلث س ص ع متساوي الساقين. جد م∠س", sub: "العلامات على الضلعين تعني أنهما متساويان.",
+      hint: "زاويتا القاعدة في المثلث متساوي الساقين متساويتان. اجمعهما ثم اطرح من ١٨٠." },
+    { id: 6, sec: 2, kind: "isoBase", marks: 2, ib, ans: (180 - ib) / 2,
+      title: "المثلث س ص ع متساوي الساقين. جد م∠س و م∠ص", sub: "كل زاوية بدرجة واحدة.",
+      hint: "اطرح زاوية الرأس من ١٨٠، ثم اقسم الباقي على ٢ لأن زاويتي القاعدة متساويتان." },
+    { id: 7, sec: 3, kind: "area", marks: 3, a: a1, ans: a1.b * a1.h / 2,
+      title: "جد مساحة المثلث.", hint: "مساحة المثلث = ½ × القاعدة × الارتفاع." },
+    { id: 8, sec: 3, kind: "area2", marks: 3, a: a2, ans: a2.b * a2.h / 2,
+      title: "جد مساحة المثلث.", sub: "انتبه: ليس كل طول مكتوب على الرسم هو الارتفاع.",
+      hint: "الارتفاع هو الخط المتقطع العمودي على القاعدة، وليس الضلع المائل." }
+  ];
+}
+const SECS = ["صلاحية أطوال الأضلاع لتكوين مثلث", "مجموع قياسات زوايا المثلث", "المثلث متساوي الساقين", "مساحة المثلث"];
+
+/* ================= triangle drawing (true to the angles) ================= */
+// base from (0,0) to (b,0); apex above using base angles aL (at left) and aR (at right)
+function apexFrom(b, aL, aR) {
+  const tl = Math.tan(deg(aL)), tr = Math.tan(deg(aR));
+  if (aL === 90) return [0, b * tr];
+  if (aR === 90) return [b, b * tl];
+  const x = b * tr / (tl + tr); return [x, x * tl];
+}
+function makeSvg(pts, pad) {
+  // pts in math coords (y up). returns svg + mapper to screen coords
+  const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
+  const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+  const w = maxX - minX, h = maxY - minY, s = 240 / Math.max(w, h * 1.15);
+  const W = w * s + pad * 2, H = h * s + pad * 2;
+  const svg = sv("svg", { class: "fig", viewBox: `0 0 ${W.toFixed(1)} ${H.toFixed(1)}`, role: "img" });
+  const m = p => [pad + (p[0] - minX) * s, pad + (maxY - p[1]) * s];
+  return { svg, m, s };
+}
+const sub = (a, b) => [a[0] - b[0], a[1] - b[1]], len = v => Math.hypot(v[0], v[1]), nrm = v => { const l = len(v); return [v[0] / l, v[1] / l]; };
+function face(svg, P) {
+  const d = `M${P[0][0]},${P[0][1]} L${P[1][0]},${P[1][1]} L${P[2][0]},${P[2][1]} Z`;
+  const p = sv("path", { class: "face draw", d }); svg.appendChild(p); return p;
+}
+function arcAt(svg, V, A, B, r) {
+  const u = nrm(sub(A, V)), w = nrm(sub(B, V));
+  const p1 = [V[0] + u[0] * r, V[1] + u[1] * r], p2 = [V[0] + w[0] * r, V[1] + w[1] * r];
+  const cross = u[0] * w[1] - u[1] * w[0];
+  svg.appendChild(sv("path", { class: "arc", d: `M${p1[0]},${p1[1]} A${r},${r} 0 0 ${cross > 0 ? 1 : 0} ${p2[0]},${p2[1]}` }));
+}
+function rightMark(svg, V, A, B, r, cls) {
+  const u = nrm(sub(A, V)), w = nrm(sub(B, V));
+  const p1 = [V[0] + u[0] * r, V[1] + u[1] * r], p3 = [V[0] + w[0] * r, V[1] + w[1] * r], p2 = [p1[0] + w[0] * r, p1[1] + w[1] * r];
+  svg.appendChild(sv("path", { class: cls || "sqk", d: `M${p1[0]},${p1[1]} L${p2[0]},${p2[1]} L${p3[0]},${p3[1]}` }));
+}
+function angleLabel(svg, V, A, B, text, ang, unk) {
+  const u = nrm(sub(A, V)), w = nrm(sub(B, V)), bi = nrm([u[0] + w[0], u[1] + w[1]]);
+  const d = Math.min(62, 20 / Math.sin(deg(ang) / 2) + 10);
+  svg.appendChild(sv("text", { class: "al" + (unk ? " unk" : ""), x: V[0] + bi[0] * d, y: V[1] + bi[1] * d + 6, "text-anchor": "middle", direction: "rtl" }, text));
+}
+function vertexLabel(svg, V, C, text) {
+  const u = nrm(sub(V, C));
+  svg.appendChild(sv("text", { class: "vl", x: V[0] + u[0] * 20, y: V[1] + u[1] * 20 + 8, "text-anchor": "middle" }, text));
+}
+function tick(svg, A, B) {
+  const m = [(A[0] + B[0]) / 2, (A[1] + B[1]) / 2], u = nrm(sub(B, A)), n = [-u[1], u[0]];
+  svg.appendChild(sv("line", { class: "tick", x1: m[0] - n[0] * 8, y1: m[1] - n[1] * 8, x2: m[0] + n[0] * 8, y2: m[1] + n[1] * 8 }));
+}
+const cen = P => [(P[0][0] + P[1][0] + P[2][0]) / 3, (P[0][1] + P[1][1] + P[2][1]) / 3];
+
+/* angles triangle: vertices [L, R, T] with angles [aL, aR, aT]; labels; which unknown; options */
+function angleFig({ aL, aR, names, show, unk, ticks, right, flip, desc }) {
+  const ap = apexFrom(10, aL, aR);
+  let pts = [[0, 0], [10, 0], ap];
+  if (flip) pts = pts.map(p => [p[0], -p[1]]);
+  const { svg, m } = makeSvg(pts, 46);
+  const P = pts.map(m), C = cen(P);
+  svg.setAttribute("aria-label", desc);
+  face(svg, P);
+  const angs = [aL, aR, 180 - aL - aR];
+  [0, 1, 2].forEach(i => {
+    const V = P[i], A = P[(i + 1) % 3], B = P[(i + 2) % 3];
+    if (right === i) rightMark(svg, V, A, B, 16);
+    else if (show[i] || unk.includes(i)) arcAt(svg, V, A, B, angs[i] < 40 ? 30 : 22);
+    if (unk.includes(i)) angleLabel(svg, V, A, B, "؟", angs[i], true);
+    else if (show[i]) angleLabel(svg, V, A, B, ar(angs[i]) + "°", angs[i]);
+    vertexLabel(svg, V, C, names[i]);
+  });
+  (ticks || []).forEach(([i, j]) => tick(svg, P[i], P[j]));
+  return svg;
+}
+/* area triangle: base b, height h, apex at horizontal offset o from left */
+function areaFig({ b, h, o, side, desc }) {
+  const pts = [[0, 0], [b, 0], [o, h]];
+  const { svg, m } = makeSvg(pts, 44);
+  const P = pts.map(m), C = cen(P);
+  svg.setAttribute("aria-label", desc);
+  face(svg, P);
+  svg.appendChild(sv("line", { class: "basel", x1: P[0][0], y1: P[0][1], x2: P[1][0], y2: P[1][1] }));
+  const foot = m([o, 0]);
+  svg.appendChild(sv("line", { class: "hgt", x1: P[2][0], y1: P[2][1], x2: foot[0], y2: foot[1] }));
+  const dir = o < b / 2 ? 1 : -1;
+  svg.appendChild(sv("path", { class: "sq", d: `M${foot[0] + dir * 13},${foot[1]} L${foot[0] + dir * 13},${foot[1] - 13} L${foot[0]},${foot[1] - 13}` }));
+  svg.appendChild(sv("text", { class: "bl", x: (P[0][0] + P[1][0]) / 2, y: P[0][1] + 28, "text-anchor": "middle", direction: "rtl" }, ar(b) + " سم"));
+  svg.appendChild(sv("text", { class: "hl", x: foot[0] + dir * 10, y: (P[2][1] + foot[1]) / 2 + 5, "text-anchor": dir > 0 ? "start" : "end", direction: "ltr" }, "‫" + ar(h) + " سم‬"));
+  if (side) {
+    const A = P[0], T = P[2], mid = [(A[0] + T[0]) / 2, (A[1] + T[1]) / 2], u = nrm(sub(mid, C));
+    svg.appendChild(sv("text", { class: "sl", x: mid[0] + u[0] * 24, y: mid[1] + u[1] * 24 + 5, "text-anchor": "middle", direction: "rtl" }, ar(side) + " سم"));
+  }
+  return svg;
+}
+
+/* ================= render sheet ================= */
+const answers = {};   // id -> value(s)
+
+function numBox(id, key, unit, label) {
+  const wrap = el("span", "box");
+  const inp = el("input"); inp.inputMode = "numeric"; inp.maxLength = 3; inp.autocomplete = "off"; inp.id = `in${id}${key}`;
+  inp.setAttribute("aria-label", label);
+  inp.addEventListener("input", () => {
+    const v = toLatin(inp.value).replace(/[^0-9]/g, "").slice(0, 3);
+    inp.value = ar(v);
+    answers[id] = answers[id] || {}; answers[id][key] = v === "" ? null : +v;
+    $("#" + qid(id)).classList.remove("missing");
+    progress();
+  });
+  wrap.append(el("span", "u", unit), inp);
+  return wrap;
+}
+const qid = id => "q" + id;
+
+function renderSheet() {
+  Q = buildQuestions(V);
+  for (const k in answers) delete answers[k];
+  graded = false;
+  const sheet = $("#sheet"); sheet.innerHTML = "";
+  let lastSec = -1;
+  Q.forEach(q => {
+    if (q.sec !== lastSec) {
+      lastSec = q.sec;
+      const h = el("div", "sec"); h.innerHTML = `<span class="idx">${["أولًا", "ثانيًا", "ثالثًا", "رابعًا"][q.sec]}</span><h2>${SECS[q.sec]}</h2>`;
+      sheet.appendChild(h);
+    }
+    const card = el("article", "q"); card.id = qid(q.id);
+    card.innerHTML = `<div class="qh"><span class="qn">${ar(q.id)}</span><p class="qt">${q.title}${q.sub ? `<small>${q.sub}</small>` : ""}</p><span class="marks">${marksWord(q.marks)}</span></div>`;
+    const body = el("div", "qb");
+    card.appendChild(body);
+    buildBody(q, body);
+    const f = el("div", "qfoot");
+    const tb = el("button", "tipbtn", `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2V16h5v-.1c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z"/></svg>ساعديني يا سنا`);
+    tb.type = "button";
+    tb.onclick = () => { say(q.hint, "tip"); hop(); sfx.tap(); };
+    f.appendChild(tb); card.appendChild(f);
+    sheet.appendChild(card);
+  });
+  // track
+  const tr = $("#track"); tr.innerHTML = "";
+  Q.forEach(q => { const a = el("a"); a.href = "#" + qid(q.id); a.setAttribute("aria-label", "السؤال " + ar(q.id)); a.onclick = e => { e.preventDefault(); $("#" + qid(q.id)).scrollIntoView({ behavior: RM ? "auto" : "smooth", block: "start" }); }; tr.appendChild(a); });
+  $("#cert").hidden = true; $("#notice").hidden = true; $("#gradebar").hidden = false;
+  progress();
+  revealCards();
+}
+
+function buildBody(q, body) {
+  if (q.kind === "sides") {
+    answers[q.id] = q.sets.map(() => null);
+    const list = el("div", "sets");
+    const max = Math.max(...q.sets.flat());
+    q.sets.forEach((t, i) => {
+      const row = el("div", "set");
+      const left = el("div");
+      left.innerHTML = `<div class="nums">${t.map(ar).join(" ، ")} <small>سم</small></div>`;
+      const st = el("div", "sticks"); t.forEach(x => { const s = el("i"); s.style.width = (x / max * 100) + "%"; st.appendChild(s); }); left.appendChild(st);
+      const seg = el("div", "seg"); seg.setAttribute("role", "group"); seg.setAttribute("aria-label", "الأطوال " + t.map(ar).join(" و "));
+      const by = el("button", "y"), bn = el("button", "n");
+      by.type = bn.type = "button";
+      by.appendChild($("#icoYes").content.cloneNode(true)); bn.appendChild($("#icoNo").content.cloneNode(true));
+      by.setAttribute("aria-label", "تصلح"); bn.setAttribute("aria-label", "لا تصلح");
+      by.setAttribute("aria-pressed", "false"); bn.setAttribute("aria-pressed", "false");
+      const pick = val => { if (graded) return; answers[q.id][i] = val; by.setAttribute("aria-pressed", val === true); bn.setAttribute("aria-pressed", val === false); $("#" + qid(q.id)).classList.remove("missing"); sfx.tap(); progress(); if (G && !RM) gsap.fromTo(val ? by : bn, { scale: .85 }, { scale: 1, duration: .3, ease: "back.out(3)" }); };
+      by.onclick = () => pick(true); bn.onclick = () => pick(false);
+      seg.append(by, bn); row.append(left, seg); list.appendChild(row);
+    });
+    body.appendChild(list);
+  }
+  else if (q.kind === "third") {
+    const th = q.th;
+    const opts = el("div", "opts"); opts.setAttribute("role", "radiogroup"); opts.setAttribute("aria-label", "طول الضلع الثالث");
+    th.opts.forEach(o => {
+      const b = el("button", "opt", `${ar(o)} <small>سم</small>`); b.type = "button"; b.setAttribute("role", "radio"); b.setAttribute("aria-checked", "false"); b.dataset.v = o;
+      b.onclick = () => { if (graded) return; answers[q.id] = o; opts.querySelectorAll(".opt").forEach(x => x.setAttribute("aria-checked", x === b)); $("#" + qid(q.id)).classList.remove("missing"); sfx.tap(); progress(); if (G && !RM) gsap.fromTo(b, { scale: .9 }, { scale: 1, duration: .3, ease: "back.out(3)" }); };
+      opts.appendChild(b);
+    });
+    body.appendChild(opts);
+  }
+  else if (q.kind === "angle") {
+    const { x, y } = q.an;
+    body.appendChild(angleFig({ aL: y, aR: x, names: ["م", "ل", "ن"], show: [1, 1, 0], unk: [2], desc: `مثلث ل م ن، فيه م∠ل = ${ar(x)}° و م∠م = ${ar(y)}°` }));
+    const r = el("div", "ansrow"); r.append(el("label", "", "م∠ن ="), numBox(q.id, "v", "°", "قياس الزاوية ن")); body.appendChild(r);
+  }
+  else if (q.kind === "right") {
+    body.appendChild(angleFig({ aL: 90, aR: q.rt, names: ["ب", "أ", "جـ"], show: [0, 1, 0], unk: [2], right: 0, desc: `مثلث قائم في ب، فيه م∠أ = ${ar(q.rt)}°` }));
+    const r = el("div", "ansrow"); r.append(el("label", "", "م∠جـ ="), numBox(q.id, "v", "°", "قياس الزاوية جـ")); body.appendChild(r);
+  }
+  else if (q.kind === "isoApex") {
+    body.appendChild(angleFig({ aL: q.ia, aR: q.ia, names: ["ع", "ص", "س"], show: [1, 1, 0], unk: [2], ticks: [[0, 2], [1, 2]], desc: `مثلث متساوي الساقين، زاويتا القاعدة ${ar(q.ia)}° لكل منهما` }));
+    const r = el("div", "ansrow"); r.append(el("label", "", "م∠س ="), numBox(q.id, "v", "°", "قياس الزاوية س")); body.appendChild(r);
+  }
+  else if (q.kind === "isoBase") {
+    const b = (180 - q.ib) / 2;
+    body.appendChild(angleFig({ aL: b, aR: b, names: ["ص", "س", "ع"], show: [0, 0, 1], unk: [0, 1], ticks: [[0, 2], [1, 2]], flip: true, desc: `مثلث متساوي الساقين رأسه ع إلى الأسفل، م∠ع = ${ar(q.ib)}°` }));
+    const r = el("div", "ansrow");
+    const g1 = el("span"); g1.style.display = "inline-flex"; g1.style.gap = "8px"; g1.style.alignItems = "center"; g1.append(el("label", "", "م∠س ="), numBox(q.id, "s", "°", "قياس الزاوية س"));
+    const g2 = el("span"); g2.style.display = "inline-flex"; g2.style.gap = "8px"; g2.style.alignItems = "center"; g2.append(el("label", "", "م∠ص ="), numBox(q.id, "p", "°", "قياس الزاوية ص"));
+    r.append(g1, g2); body.appendChild(r);
+  }
+  else if (q.kind === "area" || q.kind === "area2") {
+    const a = q.a;
+    const o = q.kind === "area" ? a.b * .38 : Math.sqrt(a.s * a.s - a.h * a.h);
+    body.appendChild(areaFig({ b: a.b, h: a.h, o, side: q.kind === "area2" ? a.s : 0, desc: `مثلث قاعدته ${ar(a.b)} سم وارتفاعه ${ar(a.h)} سم` + (a.s ? ` وأحد أضلاعه المائلة ${ar(a.s)} سم` : "") }));
+    const r = el("div", "ansrow"); r.append(el("label", "", "المساحة ="), numBox(q.id, "v", "سم²", "مساحة المثلث")); body.appendChild(r);
+  }
+}
+
+function isAnswered(q) {
+  const a = answers[q.id];
+  if (q.kind === "sides") return a.every(x => x !== null);
+  if (q.kind === "third") return a != null;
+  if (q.kind === "isoBase") return a && a.s != null && a.p != null;
+  return a && a.v != null;
+}
+function progress() {
+  if (graded) return;
+  const n = Q.filter(isAnswered).length;
+  $("#stripLbl").innerHTML = `أجبت عن <b>${ar(n)}</b> من <b>${ar(Q.length)}</b>`;
+  [...$("#track").children].forEach((a, i) => a.className = isAnswered(Q[i]) ? "done" : "");
+}
+
+/* ================= grading ================= */
+function score(q) {
+  const a = answers[q.id];
+  if (q.kind === "sides") return q.sets.reduce((s, t, i) => s + (a[i] === valid(t) ? 1 : 0), 0);
+  if (q.kind === "third") return a === q.ans[0] ? q.marks : 0;
+  if (q.kind === "isoBase") return ((a && a.s === q.ans) ? 1 : 0) + ((a && a.p === q.ans) ? 1 : 0);
+  return a && a.v === q.ans ? q.marks : 0;
+}
+function solution(q) {
+  const S = n => ar(n);
+  switch (q.kind) {
+    case "third": return `الضلع الثالث أكبر من ${S(Math.abs(q.th.a - q.th.b))} وأصغر من ${S(q.th.a + q.th.b)}، فالطول المناسب <b>${S(q.ans[0])} سم</b>.<span class="eq">${S(Math.max(q.th.a, q.th.b))} − ${S(Math.min(q.th.a, q.th.b))} &lt; ${S(q.ans[0])} &lt; ${S(q.th.a)} + ${S(q.th.b)}</span>`;
+    case "angle": return `مجموع زوايا المثلث ١٨٠°.<span class="eq">م∠ن = ١٨٠ − (${S(q.an.x)} + ${S(q.an.y)})</span><span class="eq">= ١٨٠ − ${S(q.an.x + q.an.y)} = ${S(q.ans)}°</span>`;
+    case "right": return `الزاوية القائمة ٩٠°.<span class="eq">م∠جـ = ١٨٠ − (٩٠ + ${S(q.rt)})</span><span class="eq">= ١٨٠ − ${S(90 + q.rt)} = ${S(q.ans)}°</span>`;
+    case "isoApex": return `زاويتا القاعدة متساويتان.<span class="eq">م∠س = ١٨٠ − (${S(q.ia)} + ${S(q.ia)})</span><span class="eq">= ١٨٠ − ${S(2 * q.ia)} = ${S(q.ans)}°</span>`;
+    case "isoBase": return `نطرح زاوية الرأس من ١٨٠ ثم نقسم على ٢.<span class="eq">١٨٠ − ${S(q.ib)} = ${S(180 - q.ib)}</span><span class="eq">${S(180 - q.ib)} ÷ ٢ = ${S(q.ans)}°</span>م∠س = م∠ص = ${S(q.ans)}°`;
+    case "area": case "area2": return `${q.kind === "area2" ? `الارتفاع هو ${S(q.a.h)} سم (الخط المتقطع)، أما ${S(q.a.s)} سم فهو ضلع مائل.<br>` : ""}<span class="eq">المساحة = ½ × ${S(q.a.b)} × ${S(q.a.h)}</span><span class="eq">= ${S(q.ans)} سم²</span>`;
+  }
+  return "";
+}
+function sidesWhy(t) {
+  const s = [...t].sort((p, q) => p - q), sum = s[0] + s[1];
+  const rel = sum > s[2] ? "أكبر من" : sum === s[2] ? "يساوي" : "أصغر من";
+  return `${ar(s[0])} + ${ar(s[1])} = ${ar(sum)}، وهو ${rel} ${ar(s[2])}، ${sum > s[2] ? "فهي تصلح ✓" : "فهي لا تصلح ✗"}`;
+}
+
+function lockAll() { document.querySelectorAll("#sheet input, #sheet .opt, #sheet .seg button").forEach(x => x.disabled = true); }
+
+function grade() {
+  graded = true; lockAll();
+  $("#notice").hidden = true; $("#gradebar").hidden = true;
+  let total = 0, got = 0;
+  const res = Q.map(q => {
+    const s = score(q); total += q.marks; got += s;
+    const card = $("#" + qid(q.id));
+    const state = s === q.marks ? "right" : s === 0 ? "wrong" : "half";
+    card.classList.add("graded", state);
+    card.querySelector(".marks").textContent = `${ar(s)} من ${ar(q.marks)}`;
+    card.querySelector(".qfoot").hidden = true;
+    const body = card.querySelector(".qb");
+    if (q.kind === "sides") {
+      body.querySelectorAll(".set").forEach((row, i) => {
+        const ok = answers[q.id][i] === valid(q.sets[i]);
+        row.classList.add(ok ? "ok" : "bad");
+        row.appendChild(el("p", "why", sidesWhy(q.sets[i])));
+      });
+    } else if (q.kind === "third") {
+      body.querySelectorAll(".opt").forEach(b => { const v = +b.dataset.v; if (v === q.ans[0]) b.classList.add("ok"); else if (v === answers[q.id]) b.classList.add("bad"); });
+    } else {
+      body.querySelectorAll("input").forEach(inp => {
+        const k = inp.id.replace("in" + q.id, "");
+        const v = answers[q.id] && answers[q.id][k];
+        inp.classList.add(v === q.ans ? "ok" : "bad");
+      });
+    }
+    if (q.kind !== "sides") {
+      const sol = el("div", "sol " + (state === "right" ? "ok" : "bad"));
+      sol.innerHTML = (state === "right" ? "<b>إجابة صحيحة.</b> " : state === "half" ? "<b>إجابة صحيحة جزئيًا.</b> " : "<b>الحل الصحيح:</b> ") + solution(q);
+      body.appendChild(sol);
+    }
+    return { q, s, state };
+  });
+  // track colours
+  [...$("#track").children].forEach((a, i) => a.className = res[i].state === "right" ? "ok" : res[i].state === "wrong" ? "bad" : "done");
+  $("#stripLbl").innerHTML = `درجتك <b>${ar(got)}</b> من <b>${ar(total)}</b>`;
+  showCert(res, got, total);
+}
+
+function showCert(res, got, total) {
+  const pct = got / total;
+  const nStars = pct >= .9 ? 3 : pct >= .6 ? 2 : 1;
+  $("#certName").textContent = student;
+  $("#scoreOf").textContent = ar(total);
+  const st = $("#stars"); st.innerHTML = "";
+  for (let i = 0; i < 3; i++) st.insertAdjacentHTML("beforeend", `<svg viewBox="0 0 24 24" aria-hidden="true"><path class="${i < nStars ? "on" : "off"}" stroke-width="1.4" d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4-4.7-4.4 6.4-.8z"/></svg>`);
+  st.setAttribute("aria-label", `${ar(nStars)} من ٣ نجوم`);
+  const msg = pct === 1 ? `عمل رائع يا ${student}! الإجابات كلها صحيحة.` : pct >= .75 ? `إجابة ممتازة يا ${student}! راجع الحل في الأسئلة الملوّنة بالأحمر.` : pct >= .5 ? `أحسنت المحاولة يا ${student}. اقرأ الحلول ثم جرّب مرة أخرى.` : `لا بأس يا ${student}، اقرأ الحل تحت كل سؤال ثم حاول مرة أخرى.`;
+  $("#certMsg").textContent = msg;
+  const ch = $("#chips"); ch.innerHTML = "";
+  res.forEach(r => { const a = el("a", r.state === "right" ? "ok" : r.state === "wrong" ? "bad" : "half", `<span>السؤال ${ar(r.q.id)}</span><b>${ar(r.s)} من ${ar(r.q.marks)}</b>`); a.href = "#" + qid(r.q.id); a.onclick = e => { e.preventDefault(); $("#" + qid(r.q.id)).scrollIntoView({ behavior: RM ? "auto" : "smooth", block: "start" }); }; a.style.direction = "rtl"; ch.appendChild(a); });
+  const cert = $("#cert"); cert.hidden = false;
+  cert.scrollIntoView({ behavior: RM ? "auto" : "smooth", block: "start" });
+  const gotEl = $("#scoreGot");
+  if (G && !RM) {
+    const o = { v: 0 };
+    const tl = gsap.timeline({ delay: .45 });
+    tl.from(cert, { y: 30, autoAlpha: 0, duration: .6 })
+      .from("#certName", { y: 14, autoAlpha: 0 }, "-=.25")
+      .to(o, { v: got, duration: Math.min(1.4, .2 + got * .06), ease: "power1.out", snap: { v: 1 }, onUpdate: () => gotEl.textContent = ar(o.v) }, "-=.1")
+      .from("#stars svg", { scale: 0, rotation: -40, stagger: .12, duration: .45, ease: "back.out(2.4)", transformOrigin: "50% 50%" }, "-=.3")
+      .from("#certMsg", { y: 10, autoAlpha: 0 }, "-=.2")
+      .from("#chips a", { y: 12, autoAlpha: 0, stagger: .04, duration: .35 }, "-=.25")
+      .from(".cert .acts", { autoAlpha: 0, duration: .3 }, "-=.1");
+    if (pct >= .9) tl.add(confetti, 1.3);
+  } else gotEl.textContent = ar(got);
+  if (pct >= .75) { sfx.win(); hop(); say(msg, "ok"); } else { sfx.bad(); shake(); say(msg, pct >= .5 ? "tip" : "bad"); }
+}
+
+function confetti() {
+  if (!G || RM) return;
+  const r = $("#scoreGot").getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  const cols = ["#e2553a", "#ffd84a", "#2867d6", "#169a68", "#d03a72"];
+  for (let i = 0; i < 26; i++) {
+    const p = el("i", "spark"); p.style.left = cx + "px"; p.style.top = cy + "px"; p.style.background = cols[i % 5];
+    p.style.clipPath = "polygon(50% 0, 100% 100%, 0 100%)";
+    document.body.appendChild(p);
+    const a = Math.random() * Math.PI * 2, d = 90 + Math.random() * 120;
+    gsap.to(p, { x: Math.cos(a) * d, y: Math.sin(a) * d + 80, rotation: Math.random() * 540, autoAlpha: 0, duration: 1.1 + Math.random() * .5, ease: "power2.out", onComplete: () => p.remove() });
+  }
+}
+
+$("#gradeBtn").onclick = () => {
+  const miss = Q.filter(q => !isAnswered(q));
+  if (miss.length) {
+    document.querySelectorAll(".q.missing").forEach(c => c.classList.remove("missing"));
+    miss.forEach(q => $("#" + qid(q.id)).classList.add("missing"));
+    $("#noticeTxt").textContent = `بقي ${qWord(miss.length)} دون إجابة: ${miss.map(q => ar(q.id)).join("، ")}`;
+    $("#notice").hidden = false;
+    if (G && !RM) gsap.from("#notice", { y: 10, autoAlpha: 0, duration: .35 });
+    $("#notice").scrollIntoView({ behavior: RM ? "auto" : "smooth", block: "center" });
+    say(`انتبه يا ${student}، بقي ${qWord(miss.length)} دون إجابة.`, "tip"); shake();
+    return;
+  }
+  grade();
+};
+$("#goMissing").onclick = () => { const c = document.querySelector(".q.missing"); if (c) { c.scrollIntoView({ behavior: RM ? "auto" : "smooth", block: "center" }); const i = c.querySelector("input:not([disabled]), button.opt, .seg button"); if (i) setTimeout(() => i.focus({ preventScroll: true }), 400); } };
+$("#gradeAnyway").onclick = grade;
+$("#againBtn").onclick = () => { renderSheet(); scrollTo({ top: 0, behavior: RM ? "auto" : "smooth" }); say(`هيا يا ${student}، الأرقام نفسها. حاول مرة أخرى!`); };
+$("#newBtn").onclick = () => { V = (V + 1) % 3; renderSheet(); scrollTo({ top: 0, behavior: RM ? "auto" : "smooth" }); say(`ورقة جديدة بأرقام أخرى يا ${student}. بالتوفيق!`); hop(); };
+
+/* ================= motion: reveal cards + draw triangles ================= */
+function revealCards() {
+  const cards = document.querySelectorAll(".q, .sec");
+  if (!G || RM || !("IntersectionObserver" in window)) return;
+  gsap.set(cards, { autoAlpha: 0, y: 26 });
+  document.querySelectorAll(".face.draw").forEach(p => { const L = p.getTotalLength(); p.style.strokeDasharray = L; p.style.strokeDashoffset = L; p.style.fillOpacity = 0; });
+  const io = new IntersectionObserver(es => {
+    const show = es.filter(e => e.isIntersecting).map(e => e.target);
+    if (!show.length) return;
+    show.forEach(t => io.unobserve(t));
+    gsap.to(show, { autoAlpha: 1, y: 0, duration: .55, stagger: .08 });
+    show.forEach((t, k) => t.querySelectorAll(".face.draw").forEach(p => {
+      gsap.to(p, { strokeDashoffset: 0, duration: .9, ease: "power2.inOut", delay: .25 + k * .08 });
+      gsap.to(p, { fillOpacity: 1, duration: .5, delay: 1 + k * .08 });
+    }));
+  }, { rootMargin: "0px 0px -8% 0px" });
+  cards.forEach(c => io.observe(c));
+}
+
+/* ================= welcome ================= */
+function start(name) {
+  student = name;
+  $("#nameTxt").textContent = name; $("#nameAv").textContent = name.trim()[0]; $("#namePill").hidden = false;
+  const done = () => { $("#welcome").hidden = true; };
+  if (G && !RM) gsap.to("#nameForm", { y: -30, autoAlpha: 0, duration: .35, ease: "power2.in", onComplete: () => gsap.to("#welcome", { autoAlpha: 0, duration: .25, onComplete: done }) });
+  else done();
+  say(`أهلًا يا ${name}! أنا سنا. إذا احتجت مساعدة اضغط «ساعديني يا سنا» تحت أي سؤال.`);
+  hop(); sfx.ok();
+}
+$("#nameForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const v = $("#nameIn").value.trim();
+  if (!v) { $("#nameErr").textContent = "اكتب اسمك أولًا."; $("#nameIn").setAttribute("aria-invalid", "true"); $("#nameIn").focus(); return; }
+  start(v);
+});
+$("#nameIn").addEventListener("input", () => { $("#nameErr").textContent = ""; $("#nameIn").removeAttribute("aria-invalid"); });
+
+renderSheet();
+if (G && !RM) {
+  gsap.from("#nameForm", { y: -320, duration: 1, ease: "bounce.out" });
+  gsap.from("#kiteBig svg", { rotation: -14, y: -10, duration: 1.2, ease: "elastic.out(1,.4)", delay: .6, transformOrigin: "50% 80%" });
+}
+setTimeout(() => $("#nameIn").focus({ preventScroll: true }), 300);
+
+/* self-check of the bank (console only) */
+(function check() {
+  const bad = [];
+  BANK.sides.forEach((v, i) => { const n = v.filter(valid).length; if (n !== 2) bad.push("sides " + i); });
+  BANK.third.forEach((t, i) => { const ok = t.opts.filter(o => o > Math.abs(t.a - t.b) && o < t.a + t.b); if (ok.length !== 1) bad.push("third " + i); });
+  BANK.isoBase.forEach((a, i) => { if ((180 - a) % 2) bad.push("isoBase " + i); });
+  BANK.area.concat(BANK.area2).forEach((a, i) => { if ((a.b * a.h) % 2) bad.push("area " + i); if (a.s && (a.s <= a.h || Math.sqrt(a.s * a.s - a.h * a.h) >= a.b)) bad.push("area2 " + i); });
+  if (bad.length) console.error("bank problems", bad);
+})();
+</script>
+</body>
+</html>
