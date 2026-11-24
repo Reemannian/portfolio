@@ -167,7 +167,7 @@ h1,h2,h3{font-family:var(--f-display);font-weight:400;line-height:1.25;margin:0;
 
 .foot{text-align:center;color:var(--soft);font-size:14px;margin-top:40px}
 
-/* ---------- helper (Sana the kite) ---------- */
+/* ---------- helper (Sama the kite) ---------- */
 .helper{position:fixed;left:0;right:0;bottom:0;z-index:20;padding:0 12px 12px;pointer-events:none}
 .helper-in{pointer-events:auto;max-width:748px;margin:0 auto;display:flex;align-items:flex-end;gap:8px}
 .helper .kitew{width:70px;flex:none}
@@ -207,7 +207,7 @@ h1,h2,h3{font-family:var(--f-display);font-weight:400;line-height:1.25;margin:0;
 </head>
 <body>
 
-<!-- Sana: an original kite character (a kite is made of triangles) -->
+<!-- Sama: an original kite character (a kite is made of triangles) -->
 <template id="kiteTpl"><svg class="kite" viewBox="0 0 80 96" aria-hidden="true">
 <g class="kbody">
 <path class="sail-a" d="M40 4 L40 40 L10 34 Z"/><path class="sail-b" d="M40 4 L70 34 L40 40 Z"/>
@@ -287,7 +287,7 @@ h1,h2,h3{font-family:var(--f-display);font-weight:400;line-height:1.25;margin:0;
 <div class="helper" id="helper">
   <div class="helper-in">
     <div class="kitew" id="kiteSmall"></div>
-    <div class="bubble" id="bubble"><span id="bubbleTxt" aria-live="polite">أهلًا! أنا سنا، الطائرة الورقية.</span></div>
+    <div class="bubble" id="bubble"><span id="bubbleTxt" aria-live="polite">أهلًا! أنا سما، الطائرة الورقية.</span></div>
   </div>
 </div>
 
@@ -295,7 +295,7 @@ h1,h2,h3{font-family:var(--f-display);font-weight:400;line-height:1.25;margin:0;
   <form class="modal" id="nameForm" novalidate>
     <div class="kitebig" id="kiteBig"></div>
     <h2>أهلًا بك!</h2>
-    <p>أنا سنا، وجسمي مصنوع من مثلثات. هيا نحلّ ورقة العمل معًا.</p>
+    <p>أنا سما، وجسمي مصنوع من مثلثات. هيا نحلّ ورقة العمل معًا.</p>
     <div>
       <label for="nameIn">اكتب اسمك</label>
       <input class="text-in" id="nameIn" autocomplete="off" maxlength="24">
@@ -542,7 +542,7 @@ function renderSheet() {
     card.appendChild(body);
     buildBody(q, body);
     const f = el("div", "qfoot");
-    const tb = el("button", "tipbtn", `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2V16h5v-.1c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z"/></svg>ساعديني يا سنا`);
+    const tb = el("button", "tipbtn", `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2V16h5v-.1c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z"/></svg>ساعديني يا سما`);
     tb.type = "button";
     tb.onclick = () => { say(q.hint, "tip"); hop(); sfx.tap(); };
     f.appendChild(tb); card.appendChild(f);
@@ -787,7 +787,7 @@ function start(name) {
   const done = () => { $("#welcome").hidden = true; };
   if (G && !RM) gsap.to("#nameForm", { y: -30, autoAlpha: 0, duration: .35, ease: "power2.in", onComplete: () => gsap.to("#welcome", { autoAlpha: 0, duration: .25, onComplete: done }) });
   else done();
-  say(`أهلًا يا ${name}! أنا سنا. إذا احتجت مساعدة اضغط «ساعديني يا سنا» تحت أي سؤال.`);
+  say(`أهلًا يا ${name}! أنا سما. إذا احتجت مساعدة اضغط «ساعديني يا سما» تحت أي سؤال.`);
   hop(); sfx.ok();
 }
 $("#nameForm").addEventListener("submit", e => {
