@@ -86,6 +86,8 @@ h1,h2,h3{font-family:var(--f-display);font-weight:400;line-height:1.25;margin:0;
 .fig .sl{font:600 15px var(--f-body);fill:var(--soft)}
 .fig .basel{stroke:var(--base);stroke-width:4;stroke-linecap:round}
 .fig .hgt{stroke:var(--height);stroke-width:2.6;stroke-dasharray:7 5}
+.fig .hgt.solid{stroke-dasharray:none;stroke-width:4.5}
+.fig .ext{stroke:var(--soft);stroke-width:2;stroke-dasharray:3 5}
 .fig .sq{fill:none;stroke:var(--height);stroke-width:1.8}
 .fig .sqk{fill:none;stroke:var(--tri-edge);stroke-width:1.8}
 
@@ -375,10 +377,28 @@ const BANK = {
   right: [38, 27, 44],
   isoApex: [65, 72, 48],      // base angle given → find apex
   isoBase: [100, 30, 64],     // apex given → find both base angles
-  area: [{ b: 12, h: 7 }, { b: 10, h: 9 }, { b: 16, h: 5 }],
-  area2: [{ b: 9, h: 8, s: 10 }, { b: 11, h: 6, s: 7 }, { b: 13, h: 4, s: 5 }]
+  // every labelled length is consistent: slanted sides come from Pythagoras (o = horizontal offset of the apex)
+  area: [
+    { t: "right", b: 8, h: 6, o: 0 },        // legs 8 and 6, hypotenuse 10
+    { t: "iso", b: 6, h: 4, o: 3 },          // legs 5 and 5
+    { t: "right", b: 12, h: 5, o: 0 }        // legs 12 and 5, hypotenuse 13
+  ],
+  area2: [
+    { t: "acute", b: 14, h: 12, o: 5 },      // the 13-14-15 triangle
+    { t: "obtuse", b: 7, h: 12, o: -9 },     // sides 15 and 20, height falls outside
+    { t: "hyp", b: 25, h: 12, o: 9 }         // right triangle 15-20-25 on its hypotenuse
+  ]
 };
 const valid = t => { const s = [...t].sort((p, q) => p - q); return s[0] + s[1] > s[2]; };
+
+const AREA_TXT = {
+  right: { sub: "المثلث قائم الزاوية.", hint: "في المثلث القائم، الضلعان المتعامدان هما القاعدة والارتفاع. أما الضلع الأطول (الوتر) فلا نحتاجه هنا." },
+  iso: { sub: "مثلث متساوي الساقين.", hint: "الارتفاع هو الخط المتقطع العمودي على القاعدة، وليس الساق المائلة." },
+  acute: { sub: "انتبه: ليس كل طول مكتوب على الرسم هو الارتفاع.", hint: "الارتفاع هو الخط المتقطع العمودي على القاعدة، وليس أحد الضلعين المائلين." },
+  obtuse: { sub: "انتبه: الارتفاع هنا يقع خارج المثلث.", hint: "نمدّ القاعدة لنرسم الارتفاع خارج المثلث، لكن القاعدة نفسها لا تتغيّر. المساحة = ½ × القاعدة × الارتفاع." },
+  hyp: { sub: "المثلث قائم الزاوية، ورُسم على ضلعه الأطول.", hint: "اعتبر الضلع الأطول قاعدة والخط المتقطع ارتفاعًا، أو استعمل الضلعين المتعامدين. الطريقتان تعطيان الناتج نفسه." }
+};
+const sideLens = a => ({ L: Math.hypot(a.o, a.h), R: Math.hypot(a.b - a.o, a.h) });
 
 let V = 0;                 // current variant
 let Q = [];                // built questions
@@ -406,10 +426,9 @@ function buildQuestions(v) {
       title: "المثلث س ص ع متساوي الساقين. جد م∠س و م∠ص", sub: "كل زاوية بدرجة واحدة.",
       hint: "اطرح زاوية الرأس من ١٨٠، ثم اقسم الباقي على ٢ لأن زاويتي القاعدة متساويتان." },
     { id: 7, sec: 3, kind: "area", marks: 3, a: a1, ans: a1.b * a1.h / 2,
-      title: "جد مساحة المثلث.", hint: "مساحة المثلث = ½ × القاعدة × الارتفاع." },
+      title: "جد مساحة المثلث.", sub: AREA_TXT[a1.t].sub, hint: AREA_TXT[a1.t].hint },
     { id: 8, sec: 3, kind: "area2", marks: 3, a: a2, ans: a2.b * a2.h / 2,
-      title: "جد مساحة المثلث.", sub: "انتبه: ليس كل طول مكتوب على الرسم هو الارتفاع.",
-      hint: "الارتفاع هو الخط المتقطع العمودي على القاعدة، وليس الضلع المائل." }
+      title: "جد مساحة المثلث.", sub: AREA_TXT[a2.t].sub, hint: AREA_TXT[a2.t].hint }
   ];
 }
 const SECS = ["صلاحية أطوال الأضلاع لتكوين مثلث", "مجموع قياسات زوايا المثلث", "المثلث متساوي الساقين", "مساحة المثلث"];
@@ -484,24 +503,43 @@ function angleFig({ aL, aR, names, show, unk, ticks, right, flip, desc }) {
   (ticks || []).forEach(([i, j]) => tick(svg, P[i], P[j]));
   return svg;
 }
-/* area triangle: base b, height h, apex at horizontal offset o from left */
-function areaFig({ b, h, o, side, desc }) {
+/* area triangle: base b, height h, apex at horizontal offset o from the left base vertex
+   (o = 0 right angle at the left vertex, o < 0 or o > b obtuse with the height outside) */
+function areaFig(a, desc) {
+  const { b, h, o, t } = a, { L, R } = sideLens(a);
   const pts = [[0, 0], [b, 0], [o, h]];
-  const { svg, m } = makeSvg(pts, 44);
-  const P = pts.map(m), C = cen(P);
+  const { svg, m } = makeSvg(pts.concat([[o, 0]]), 46);
+  const P = pts.map(m), C = cen(P), foot = m([o, 0]);
   svg.setAttribute("aria-label", desc);
+  if (o < 0 || o > b) {
+    const near = o < 0 ? P[0] : P[1];
+    svg.appendChild(sv("line", { class: "ext", x1: near[0], y1: near[1], x2: foot[0], y2: foot[1] }));
+  }
   face(svg, P);
   svg.appendChild(sv("line", { class: "basel", x1: P[0][0], y1: P[0][1], x2: P[1][0], y2: P[1][1] }));
-  const foot = m([o, 0]);
-  svg.appendChild(sv("line", { class: "hgt", x1: P[2][0], y1: P[2][1], x2: foot[0], y2: foot[1] }));
-  const dir = o < b / 2 ? 1 : -1;
-  svg.appendChild(sv("path", { class: "sq", d: `M${foot[0] + dir * 13},${foot[1]} L${foot[0] + dir * 13},${foot[1] - 13} L${foot[0]},${foot[1] - 13}` }));
-  svg.appendChild(sv("text", { class: "bl", x: (P[0][0] + P[1][0]) / 2, y: P[0][1] + 28, "text-anchor": "middle", direction: "rtl" }, ar(b) + " سم"));
-  svg.appendChild(sv("text", { class: "hl", x: foot[0] + dir * 10, y: (P[2][1] + foot[1]) / 2 + 5, "text-anchor": dir > 0 ? "start" : "end", direction: "ltr" }, "‫" + ar(h) + " سم‬"));
-  if (side) {
-    const A = P[0], T = P[2], mid = [(A[0] + T[0]) / 2, (A[1] + T[1]) / 2], u = nrm(sub(mid, C));
-    svg.appendChild(sv("text", { class: "sl", x: mid[0] + u[0] * 24, y: mid[1] + u[1] * 24 + 5, "text-anchor": "middle", direction: "rtl" }, ar(side) + " سم"));
+  const sideText = (A, B, len) => {
+    const mid = [(A[0] + B[0]) / 2, (A[1] + B[1]) / 2], d = nrm(sub(B, A));
+    let u = [-d[1], d[0]];
+    if (u[0] * (mid[0] - C[0]) + u[1] * (mid[1] - C[1]) < 0) u = [-u[0], -u[1]];
+    const off = 14 + 24 * Math.abs(u[0]);
+    svg.appendChild(sv("text", { class: "sl", x: mid[0] + u[0] * off, y: mid[1] + u[1] * off + 5, "text-anchor": "middle", direction: "rtl" }, ar(Math.round(len)) + " سم"));
+  };
+  if (o === 0) {
+    // the left leg is the height
+    svg.appendChild(sv("line", { class: "hgt solid", x1: P[0][0], y1: P[0][1], x2: P[2][0], y2: P[2][1] }));
+    rightMark(svg, P[0], P[1], P[2], 15, "sq");
+    svg.appendChild(sv("text", { class: "hl", x: P[0][0] - 12, y: (P[0][1] + P[2][1]) / 2 + 5, "text-anchor": "end", direction: "ltr" }, "\u202B" + ar(h) + " سم\u202C"));
+    sideText(P[1], P[2], R);
+  } else {
+    svg.appendChild(sv("line", { class: "hgt", x1: P[2][0], y1: P[2][1], x2: foot[0], y2: foot[1] }));
+    const dir = o < b / 2 ? 1 : -1;
+    svg.appendChild(sv("path", { class: "sq", d: `M${foot[0] + dir * 13},${foot[1]} L${foot[0] + dir * 13},${foot[1] - 13} L${foot[0]},${foot[1] - 13}` }));
+    const ld = (o < 0 || o > b) ? -dir : dir;
+    svg.appendChild(sv("text", { class: "hl", x: foot[0] + ld * 10, y: (P[2][1] + foot[1]) / 2 + 5, "text-anchor": ld > 0 ? "start" : "end", direction: "ltr" }, "\u202B" + ar(h) + " سم\u202C"));
+    sideText(P[0], P[2], L); sideText(P[1], P[2], R);
+    if (t === "hyp") rightMark(svg, P[2], P[0], P[1], 14, "sqk");
   }
+  svg.appendChild(sv("text", { class: "bl", x: (P[0][0] + P[1][0]) / 2, y: P[0][1] + 28, "text-anchor": "middle", direction: "rtl" }, ar(b) + " سم"));
   return svg;
 }
 
@@ -610,9 +648,8 @@ function buildBody(q, body) {
     r.append(g1, g2); body.appendChild(r);
   }
   else if (q.kind === "area" || q.kind === "area2") {
-    const a = q.a;
-    const o = q.kind === "area" ? a.b * .38 : Math.sqrt(a.s * a.s - a.h * a.h);
-    body.appendChild(areaFig({ b: a.b, h: a.h, o, side: q.kind === "area2" ? a.s : 0, desc: `مثلث قاعدته ${ar(a.b)} سم وارتفاعه ${ar(a.h)} سم` + (a.s ? ` وأحد أضلاعه المائلة ${ar(a.s)} سم` : "") }));
+    const a = q.a, { L, R } = sideLens(a);
+    body.appendChild(areaFig(a, `مثلث قاعدته ${ar(a.b)} سم وارتفاعه ${ar(a.h)} سم` + (a.o === 0 ? `، ووتره ${ar(R)} سم` : `، وضلعاه الآخران ${ar(L)} سم و ${ar(R)} سم`)));
     const r = el("div", "ansrow"); r.append(el("label", "", "المساحة ="), numBox(q.id, "v", "سم²", "مساحة المثلث")); body.appendChild(r);
   }
 }
@@ -647,7 +684,18 @@ function solution(q) {
     case "right": return `الزاوية القائمة ٩٠°.<span class="eq">م∠جـ = ١٨٠ − (٩٠ + ${S(q.rt)})</span><span class="eq">= ١٨٠ − ${S(90 + q.rt)} = ${S(q.ans)}°</span>`;
     case "isoApex": return `زاويتا القاعدة متساويتان.<span class="eq">م∠س = ١٨٠ − (${S(q.ia)} + ${S(q.ia)})</span><span class="eq">= ١٨٠ − ${S(2 * q.ia)} = ${S(q.ans)}°</span>`;
     case "isoBase": return `نطرح زاوية الرأس من ١٨٠ ثم نقسم على ٢.<span class="eq">١٨٠ − ${S(q.ib)} = ${S(180 - q.ib)}</span><span class="eq">${S(180 - q.ib)} ÷ ٢ = ${S(q.ans)}°</span>م∠س = م∠ص = ${S(q.ans)}°`;
-    case "area": case "area2": return `${q.kind === "area2" ? `الارتفاع هو ${S(q.a.h)} سم (الخط المتقطع)، أما ${S(q.a.s)} سم فهو ضلع مائل.<br>` : ""}<span class="eq">المساحة = ½ × ${S(q.a.b)} × ${S(q.a.h)}</span><span class="eq">= ${S(q.ans)} سم²</span>`;
+    case "area": case "area2": {
+      const A = q.a, { L, R } = sideLens(A), b = S(A.b), h = S(A.h);
+      const lead = {
+        right: `الضلعان المتعامدان هما القاعدة ${b} سم والارتفاع ${h} سم، أما ${S(R)} سم فهو الوتر.`,
+        iso: `الارتفاع ${h} سم (الخط المتقطع)، أما ${S(L)} سم فهو طول الساق.`,
+        acute: `الارتفاع ${h} سم (الخط المتقطع)، أما ${S(L)} سم و ${S(R)} سم فضلعان مائلان.`,
+        obtuse: `الارتفاع ${h} سم يقع خارج المثلث، والقاعدة ${b} سم فقط دون الامتداد.`,
+        hyp: `القاعدة هي الضلع الأطول ${b} سم، والارتفاع عليها ${h} سم.`
+      }[A.t];
+      const extra = A.t === "hyp" ? `وبطريقة أخرى بالضلعين المتعامدين:<span class="eq">½ × ${S(L)} × ${S(R)} = ${S(L * R / 2)} سم²</span>` : "";
+      return `${lead}<span class="eq">المساحة = ½ × ${b} × ${h}</span><span class="eq">= ${S(q.ans)} سم²</span>${extra}`;
+    }
   }
   return "";
 }
@@ -811,7 +859,15 @@ setTimeout(() => $("#nameIn").focus({ preventScroll: true }), 300);
   BANK.sides.forEach((v, i) => { const n = v.filter(valid).length; if (n !== 2) bad.push("sides " + i); });
   BANK.third.forEach((t, i) => { const ok = t.opts.filter(o => o > Math.abs(t.a - t.b) && o < t.a + t.b); if (ok.length !== 1) bad.push("third " + i); });
   BANK.isoBase.forEach((a, i) => { if ((180 - a) % 2) bad.push("isoBase " + i); });
-  BANK.area.concat(BANK.area2).forEach((a, i) => { if ((a.b * a.h) % 2) bad.push("area " + i); if (a.s && (a.s <= a.h || Math.sqrt(a.s * a.s - a.h * a.h) >= a.b)) bad.push("area2 " + i); });
+  BANK.area.concat(BANK.area2).forEach((a, i) => {
+    const { L, R } = sideLens(a);
+    if ((a.b * a.h) % 2) bad.push("area odd " + i);
+    if (a.o !== 0 && !Number.isInteger(L)) bad.push("area L " + i);
+    if (!Number.isInteger(R)) bad.push("area R " + i);
+    if (a.t === "hyp" && (L * L + R * R !== a.b * a.b || L * R !== a.b * a.h)) bad.push("area hyp " + i);
+    if (a.t === "obtuse" !== (a.o < 0 || a.o > a.b)) bad.push("area obtuse " + i);
+    if (a.t === "iso" && L !== R) bad.push("area iso " + i);
+  });
   if (bad.length) console.error("bank problems", bad);
 })();
 </script>
